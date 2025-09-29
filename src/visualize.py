@@ -43,4 +43,30 @@ def display_results(original_image: np.ndarray, result_image: np.ndarray) -> Non
     axes[1].set_title('After')
     axes[1].axis('off')
     plt.tight_layout()
+    plt.savefig('contours.png')
     plt.show()
+
+
+def plot_single_contour(contour: np.ndarray, index: int) -> None:
+    """
+    単一の輪郭を表示する
+    Args:
+        contour (ndarray): 輪郭
+        index (int): 輪郭のインデックス
+    """
+    plt.figure()
+    #始点と終点は色で区別
+    plt.plot(contour[:, 0, 0], contour[:, 0, 1], marker='o')
+    plt.plot(contour[0, 0, 0], contour[0, 0, 1], marker='o', color='red', label='Start')
+    plt.plot(contour[-1, 0, 0], contour[-1, 0, 1], marker='o', color='blue', label='End')
+    #最初の点は最後の点とつなげる
+    plt.plot([contour[-1, 0, 0], contour[0, 0, 0]], [contour[-1, 0, 1], contour[0, 0, 1]], color='gray')
+    plt.legend()
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.title(f'Contour {index}')
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.gca().invert_yaxis()
+    plt.grid()
+    plt.show()
+    plt.close()

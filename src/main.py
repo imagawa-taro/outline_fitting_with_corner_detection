@@ -1,6 +1,7 @@
+import matplotlib.pyplot as plt
 from typing import List, Tuple, Optional
 
-from visualize import visualize_contours, display_results
+from visualize import visualize_contours, display_results, plot_single_contour
 from image_utils import load_image_grayscale, extract_room_contours
 from contours_utils import drop_small_contours
 
@@ -29,6 +30,9 @@ def main() -> None:
     contours_on_org_img = visualize_contours(wall_img, contours)
     display_results(initial_contours_img, contours_on_org_img)
 
+    # contoursに含まれる輪郭を個別表示
+    for i, cnt in enumerate(contours):
+        plot_single_contour(cnt, i)
 
 if __name__ == "__main__":
     main()
