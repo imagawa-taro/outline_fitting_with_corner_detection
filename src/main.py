@@ -139,9 +139,6 @@ def main() -> None:
     img_name = '001759.png' # 斜めの壁がある図面
     # img_name = '000325.png' # 曲がった壁がある図面
 
-    # 元画像の読み込み
-    # org_img = load_image_grayscale(f'{data_folder}{img_name}')
-
     # 元画像を加工して作成した壁画像の読み込み
     wall_img = load_image_grayscale(f'{data_folder}{img_name}')
 
@@ -154,7 +151,6 @@ def main() -> None:
     
     # 輪郭の可視化
     contours_on_org_img = visualize_contours(wall_img, contours)
-
     display_results(initial_contours_img, contours_on_org_img)
 
 
