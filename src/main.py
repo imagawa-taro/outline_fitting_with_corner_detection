@@ -1,10 +1,13 @@
 import matplotlib.pyplot as plt
+import cv2
+import numpy as np
 from typing import List, Tuple, Optional
 
+from corner_detection import detect_corners_by_curvature
 from visualize import visualize_contours, display_results, plot_single_contour
 from image_utils import load_image_grayscale, extract_room_contours
 from contours_utils import drop_small_contours
-
+from curvature import curvature_from_closed_contour
 
 
 
@@ -32,7 +35,57 @@ def main() -> None:
 
     # contoursに含まれる輪郭を個別表示
     for i, cnt in enumerate(contours):
-        plot_single_contour(cnt, i)
+        if i == 1:  # 最初の1つだけ表示
+            plot_single_contour(cnt, i)
+
+            contour_length = cv2.arcLength(cnt, closed=True)
+            # cntからx,yを取り出す
+            x = cnt[:, 0, 0]
+            y = cnt[:, 0, 1]
+            # 曲率推定
+            s, kappa, x_u, y_u = curvature_from_closed_contour(
+                x, y,
+                resample_points=64,
+                sg_polyorder=3,
+                window_length_arc=int(6),  # コーナー: 0.3〜0.6 × R_corner
+                return_resampled_coords=True
+            )
+
+            corner_idx3, s_corners3, xy_corners3, (s3, kappa3, x_u3, y_u3, dtheta3, ang_dict3) = detect_corners_by_curvature(
+                x, y,
+                resample_points=256,
+                sg_polyorder=3,
+                window_length_arc=6,  # 周長の目安で設定
+                integ_window_arc=6,
+                angle_measure='turning',           # 回転角で範囲指定（例: 60°〜90°）
+                angle_range_deg=(45.0, 135.0),
+                angle_mode='both',
+                angle_margin_deg=10.0,
+                return_all=True
+            )
+            print(f"検出されたコーナー数: {len(corner_idx3)}")
+            fig3, ax3 = plt.subplots(figsize=(8, 4), dpi=120)
+            ax3.plot(s3, kappa3, '-b', label='Curvature κ(s)')
+            ax3.axhline(0, color='k', linestyle='--', linewidth=0.8)
+            ax3.scatter(s_corners3, kappa3[corner_idx3], color='r', s=50, label='Detected corners')
+            ax3.set_xlabel('Arc length s (pixels)')
+            ax3.set_ylabel('Curvature κ (1/pixel)')
+            ax3.legend()
+            plt.tight_layout()
+
+            # 2D plot上にコーナー点を表示
+            plt.figure()
+            plt.plot(x, y, '-b', label='Contour')
+            plt.plot([x[-1], x[0]], [y[-1], y[0]], '-b')
+            plt.scatter(xy_corners3[:, 0], xy_corners3[:, 1], color='r', s=50, label='Detected corners')
+            plt.gca().set_aspect('equal', adjustable='box')
+            plt.title(f'Contour {i} with Detected Corners')
+            plt.xlabel('X') 
+            plt.ylabel('Y')
+            plt.gca().invert_yaxis()
+            plt.legend()
+            plt.show()  
+
 
 if __name__ == "__main__":
     main()
