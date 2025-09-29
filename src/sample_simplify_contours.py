@@ -22,6 +22,7 @@ def load_image_grayscale(image_path: str) -> np.ndarray:
         raise FileNotFoundError(f"画像ファイルが見つかりません。画像ファイル名を確認してください: {image_path}")
     return img
 
+
 def extract_room_contours(image: np.ndarray, threshold: int = 225) -> List[np.ndarray]:
     """
     画像から部屋の輪郭を抽出する
@@ -47,47 +48,7 @@ def extract_room_contours(image: np.ndarray, threshold: int = 225) -> List[np.nd
     else:
         return contours
 
-def snap_contours_to_points(contours: List[np.ndarray], points: np.ndarray, max_distance: Optional[float] = None, keep_unsnapped: bool = True) -> List[np.ndarray]:
-    """
-    輪郭の頂点を最も近い指定された点にスナップする
-    
-    Args:
-        contours (list): 元の輪郭リスト
-        points (ndarray): スナップ先の点群 (N, 2) の形状
-        max_distance (float, optional): スナップする最大距離（ピクセル）。Noneの場合は制限なし
-        keep_unsnapped (bool): スナップできない点を保持するか（True: 保持, False: 削除）
-    
-    Returns:
-        list: スナップされた輪郭リスト
-    """
-    if points.size == 0:
-        return contours
-    
-    # KDTreeで点のインデックスを構築
-    kdtree = cKDTree(points)
-    
-    # 各輪郭の各頂点をスナップ
-    snapped_contours = []
-    for cnt in contours:
-        snapped_cnt = []
-        for point in cnt:
-            x, y = point[0]
-            # 最も近い点を検索
-            dist, closest_idx = kdtree.query([x, y])
-            # 最大距離チェック
-            if max_distance is None or dist <= max_distance:
-                # 点にスナップ
-                snapped_point = points[closest_idx]
-                snapped_cnt.append([[snapped_point[0], snapped_point[1]]])
-            elif keep_unsnapped:
-                snapped_cnt.append([[x, y]])    # スナップしない場合は元の点を保持
-            # keep_unsnapped=Falseの場合は何もしない（点を削除）
-        
-        # 空でない輪郭のみを追加
-        if len(snapped_cnt) > 0:
-            snapped_contours.append(np.array(snapped_cnt, dtype=np.int32))
-    
-    return snapped_contours
+
 
 def visualize_contours(image: np.ndarray, contours: List[np.ndarray]) -> np.ndarray:
     """
@@ -144,101 +105,6 @@ def display_results(original_image: np.ndarray, result_image: np.ndarray) -> Non
 
     plt.tight_layout()
     plt.show()
-
-def detect_lines_and_intersections(contours: List[np.ndarray], image_shape: Tuple[int, int]) -> np.ndarray:
-    """
-    輪郭からハフ変換で直線を検出し、直線同士の交点を計算する
-
-    Args:
-        contours (list): 輪郭リスト
-        image_shape (tuple): 画像のサイズ (height, width)
-
-    Returns:
-        ndarray: 交点配列 shape=(N,2)
-    """
-    # 輪郭を描画した画像を作成
-    contour_image = np.zeros(image_shape, dtype=np.uint8)
-    cv2.drawContours(contour_image, contours, -1, 255, 1)
-
-    # ハフ変換で直線検出(垂直、水平の線に限定)
-    lines = cv2.HoughLines(contour_image, 1, np.pi / 2, threshold=10)
-
-    """ 
-    # デバッグ用にlinesを画像化して表示
-    if lines is not None:
-        line_image = np.zeros(image_shape, dtype=np.uint8)
-        for line in lines:
-            rho, theta = line[0]
-            a = np.cos(theta)
-            b = np.sin(theta)
-            x0 = a * rho
-            y0 = b * rho
-            # 直線の始点と終点を計算
-            x1 = int(x0 + 1000 * (-b))
-            y1 = int(y0 + 1000 * (a))
-            x2 = int(x0 - 1000 * (-b))
-            y2 = int(y0 - 1000 * (a))
-            cv2.line(line_image, (x1, y1), (x2, y2), 255, 1)
-        plt.imshow(line_image, cmap='gray')
-        plt.title('Detected Lines')
-        plt.axis('off')
-        plt.show()
-    """
-
-    # 直線同士の交点を計算
-    intersections = []
-    if lines is not None:
-        for i in range(len(lines)):
-            for j in range(i + 1, len(lines)):
-                rho1, theta1 = lines[i][0]
-                rho2, theta2 = lines[j][0]
-                # 直線のパラメータから交点を計算
-                A = np.array([[np.cos(theta1), np.sin(theta1)],
-                              [np.cos(theta2), np.sin(theta2)]])
-                b = np.array([rho1, rho2])
-                try:
-                    intersection = np.linalg.solve(A, b)
-                    intersections.append(intersection)
-                except np.linalg.LinAlgError:
-                    continue    # 直線が平行な場合は解（交点）が存在しないためスキップ
-                
-    # 交点を整数座標に変換
-    intersections = [tuple(np.round(intersection).astype(float)) for intersection in intersections if np.all(np.isfinite(intersection))]
-    intersections = list(set(intersections))  # 重複を削除
-
-    # 画像のサイズに合わせて交点をフィルタリング
-    intersections = [pt for pt in intersections if 0 <= pt[0] < image_shape[1] and 0 <= pt[1] < image_shape[0]]
-
-    if intersections:
-        intersections = np.array(intersections, dtype=float)
-    else:
-        intersections = np.empty((0,2), dtype=float)
-
-    return intersections
-
-def remove_redundant_contour_points(contours: List[np.ndarray]) -> List[np.ndarray]:
-    """
-    輪郭から冗長な頂点を削除する（削除しても面積が変わらない点を削除）
-    
-    Args:
-        contours (list): 元の輪郭リスト
-    
-    Returns:
-        list: 冗長な頂点が削除された輪郭リスト
-    """
-    cleaned_contours = []
-    for cnt in contours:
-        org_area = cv2.contourArea(cnt)
-        if len(cnt) >= 3 and org_area > 0:  # 3点以下の輪郭、面積が0の輪郭は無視（削除）
-            # 頂点を後ろから参照して、削除しても面積が変わらない点を削除
-            for i in range(len(cnt)-1, -1, -1):
-                cnt_cand = np.delete(cnt, i, axis=0)  # i番目の頂点を削除した候補輪郭
-                # 面積が変わらない場合は採用
-                if cv2.contourArea(cnt_cand) == org_area:
-                    cnt = cnt_cand
-            cleaned_contours.append(cnt)
-    
-    return cleaned_contours
 
 
 
