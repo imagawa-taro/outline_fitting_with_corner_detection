@@ -30,13 +30,13 @@ def main() -> None:
     contours = drop_small_contours(contours, min_area=100.0)
     
     # 輪郭の可視化
-    contours_on_org_img = visualize_contours(wall_img, contours)
-    display_results(initial_contours_img, contours_on_org_img)
+    # contours_on_org_img = visualize_contours(wall_img, contours)
+    # display_results(initial_contours_img, contours_on_org_img)
 
     # contoursに含まれる輪郭を個別表示
     for i, cnt in enumerate(contours):
-        if i == 1:  # 最初の1つだけ表示
-            plot_single_contour(cnt, i)
+        if i == 12:  # 最初の1つだけ表示
+            # plot_single_contour(cnt, i)
 
             contour_length = cv2.arcLength(cnt, closed=True)
             # cntからx,yを取り出す

@@ -68,5 +68,5 @@ def plot_single_contour(contour: np.ndarray, index: int) -> None:
     plt.ylabel('Y')
     plt.gca().invert_yaxis()
     plt.grid()
-    plt.show()
-    plt.close()
+    # plt.show()
+    # plt.close()
