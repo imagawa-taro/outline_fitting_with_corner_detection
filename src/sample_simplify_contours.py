@@ -240,54 +240,7 @@ def remove_redundant_contour_points(contours: List[np.ndarray]) -> List[np.ndarr
     
     return cleaned_contours
 
-def simplify_contours_with_hough_intersections(contours: List[np.ndarray], image_shape: Tuple[int, int], max_distance: float = 15.0) -> Tuple[List[np.ndarray], np.ndarray]:
-    """
-    輪郭から抽出した直線の交点を使って輪郭をシンプル化する
-    ただし、直線は水平、垂直に限定され、交点にスナップされなかった点は削除されるため、斜めの壁や曲線の壁がある図面では利用できない
-    Args:
-        contours (list): 元の輪郭リスト
-        image_shape (tuple): 画像のサイズ (height, width)
-        max_distance (float): スナップする最大距離
-    
-    Returns:
-        tuple: (シンプル化された輪郭リスト, 使用された交点配列)
-    """
-    # 1. 輪郭から直線を検出し、交点を計算する
-    intersections = detect_lines_and_intersections(contours, image_shape)
-    
-    if intersections.shape[0] == 0:
-        return contours, intersections # 交点がない場合は元の輪郭を返す
-    
-    # 2. 輪郭の頂点を交点にスナップ（交点以外の頂点は削除）
-    snapped_contours = snap_contours_to_points(contours, intersections, max_distance, keep_unsnapped=False)
-    
-    # 3. 輪郭における同一点、同一直線状の点を削除する（削除しても面積が変わらない点を削除）
-    cleaned_contours = remove_redundant_contour_points(snapped_contours)
 
-    return cleaned_contours, intersections
-
-def visualize_intersections(image: np.ndarray, intersections: np.ndarray, color: Tuple[int, int, int] = (255, 0, 0), radius: int = 1) -> np.ndarray:
-    """
-    交点を描画する
-    
-    Args:
-        image (ndarray): 描画対象の画像
-        intersections (ndarray): 交点配列 shape=(N,2)
-        color (tuple): 描画色 (B, G, R)
-        radius (int): 描画する円の半径
-    
-    Returns:
-        ndarray: 交点が描画された画像
-    """
-    output = image.copy()
-    if len(output.shape) == 2:
-        output = cv2.cvtColor(output, cv2.COLOR_GRAY2BGR)
-    
-    for intersection in intersections:
-        x, y = intersection
-        cv2.circle(output, (int(x), int(y)), radius, color, -1)
-    
-    return output
 
 def drop_small_contours(contours: List[np.ndarray], min_area: float = 100.0) -> List[np.ndarray]:
     """
@@ -321,37 +274,22 @@ def main() -> None:
     # img_name = '000325.png' # 曲がった壁がある図面
 
     # 元画像の読み込み
-    org_img = load_image_grayscale(f'{data_folder}{img_name}')
+    # org_img = load_image_grayscale(f'{data_folder}{img_name}')
 
     # 元画像を加工して作成した壁画像の読み込み
     wall_img = load_image_grayscale(f'{data_folder}{img_name}')
 
     # 輪郭抽出
     contours = extract_room_contours(wall_img)
+    initial_contours_img = visualize_contours(wall_img, contours)
     
     # 面積が小さい輪郭を削除
     contours = drop_small_contours(contours, min_area=100.0)
     
     # 輪郭の可視化
-    contours_on_org_img = visualize_contours(org_img, contours)
+    contours_on_org_img = visualize_contours(wall_img, contours)
 
-    ### 輪郭の直線化、頂点削減処理 ###
-    # 輪郭をシンプルにする処理
-    simplified_contours, detected_intersections = simplify_contours_with_hough_intersections(contours, wall_img.shape, 10)
-
-    # シンプル化された輪郭を元画像に描画
-    simplified_contours_on_org_img = visualize_contours(org_img, simplified_contours)
-    
-    # 使用された交点も描画
-    # simplified_contours_on_org_img = visualize_intersections(simplified_contours_on_org_img, detected_intersections)
-
-    # デバッグ用に輪郭の数と各輪郭の頂点数を表示
-    print("Debug: Number of contours:", len(simplified_contours))
-    for i, contour in enumerate(simplified_contours):
-        print(f"Debug: Number of vertices in contour {i}:", len(contour))
-
-    # シンプル化の結果表示
-    display_results(contours_on_org_img, simplified_contours_on_org_img)
+    display_results(initial_contours_img, contours_on_org_img)
 
 
 if __name__ == "__main__":
