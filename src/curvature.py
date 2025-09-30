@@ -4,17 +4,17 @@ from scipy.signal import savgol_filter
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 from matplotlib.colors import TwoSlopeNorm
-
+from typing import List
 
 def curvature_from_closed_contour(
-    x,
-    y,
-    resample_points=None,
-    sg_polyorder=3,
-    window_length_samples=None,
-    window_length_arc=None,
-    return_resampled_coords=False
-):
+    x: np.ndarray,
+    y: np.ndarray,
+    resample_points: int = None,
+    sg_polyorder: int = 3,
+    window_length_samples: int = None,
+    window_length_arc: float = None,
+    return_resampled_coords: bool = False
+) -> tuple:
     """
     閉じた2D輪郭点列 (x[i], y[i]) から、弧長 s に対する曲率 κ(s) を推定する。
     Savitzky–Golay フィルタを用いて周期的境界条件で平滑微分し、ノイズにロバストな推定を行う。
@@ -122,7 +122,7 @@ def curvature_from_closed_contour(
 
 
 # 画像を引数として輪郭(closed contour)抽出する関数
-def get_contour_from_image(image):
+def get_contour_from_image(image: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     import cv2
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     _, binary = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
