@@ -108,6 +108,10 @@ def visualize_contours(image: np.ndarray, contours: List[np.ndarray]) -> np.ndar
     # 輪郭の線描画と塗りつぶし
     for i, cnt in enumerate(contours):
         if len(cnt) >= 3:
+            # 頂点プロット
+            for point in cnt:
+                cv2.circle(output, tuple(point[0]), 2, (255, 0, 0), -1)
+
             line_color = PALETTE[i % len(PALETTE)]
             fill_color = (line_color * 0.5 + 255 * 0.5).astype(int)
             cv2.fillPoly(output, [cnt], fill_color.tolist())
@@ -316,43 +320,52 @@ def main() -> None:
     """
     メイン処理関数
     """
+    num_list = [263, 325, 406, 426, 547, 581, 1407, 1423, 1521, 1759]
     data_folder = 'D:/20250929_layout_fitting3/data/'
-    img_name = '001759.png' # 斜めの壁がある図面
-    # img_name = '000325.png' # 曲がった壁がある図面
+    for i in range(len(num_list)):
+        img_name = f'{num_list[i]:06d}.png'
+        # img_name = '001759.png' # 斜めの壁がある図面
+        # img_name = '000325.png' # 曲がった壁がある図面
 
-    # 元画像の読み込み
-    org_img = load_image_grayscale(f'{data_folder}{img_name}')
+        # 元画像の読み込み
+        org_img = load_image_grayscale(f'{data_folder}{img_name}')
 
-    # 元画像を加工して作成した壁画像の読み込み
-    wall_img = load_image_grayscale(f'{data_folder}{img_name}')
+        # 元画像を加工して作成した壁画像の読み込み
+        wall_img = load_image_grayscale(f'{data_folder}{img_name}')
 
-    # 輪郭抽出
-    contours = extract_room_contours(wall_img)
-    
-    # 面積が小さい輪郭を削除
-    contours = drop_small_contours(contours, min_area=100.0)
-    
-    # 輪郭の可視化
-    contours_on_org_img = visualize_contours(org_img, contours)
+        # 輪郭抽出
+        contours = extract_room_contours(wall_img)
+        
+        # 面積が小さい輪郭を削除
+        contours = drop_small_contours(contours, min_area=100.0)
+        
+        # 輪郭の可視化
+        contours_on_org_img = visualize_contours(org_img, contours)
 
-    ### 輪郭の直線化、頂点削減処理 ###
-    # 輪郭をシンプルにする処理
-    simplified_contours, detected_intersections = simplify_contours_with_hough_intersections(contours, wall_img.shape, 10)
+        ### 輪郭の直線化、頂点削減処理 ###
+        # 輪郭をシンプルにする処理
+        simplified_contours, detected_intersections = simplify_contours_with_hough_intersections(contours, wall_img.shape, 10)
 
-    # シンプル化された輪郭を元画像に描画
-    simplified_contours_on_org_img = visualize_contours(org_img, simplified_contours)
-    
-    # 使用された交点も描画
-    # simplified_contours_on_org_img = visualize_intersections(simplified_contours_on_org_img, detected_intersections)
+        # シンプル化された輪郭を元画像に描画
+        simplified_contours_on_org_img = visualize_contours(org_img, simplified_contours)
+        
+        # 使用された交点も描画
+        # simplified_contours_on_org_img = visualize_intersections(simplified_contours_on_org_img, detected_intersections)
 
-    # デバッグ用に輪郭の数と各輪郭の頂点数を表示
-    print("Debug: Number of contours:", len(simplified_contours))
-    for i, contour in enumerate(simplified_contours):
-        print(f"Debug: Number of vertices in contour {i}:", len(contour))
+        # デバッグ用に輪郭の数と各輪郭の頂点数を表示
+        print("Debug: Number of contours:", len(simplified_contours))
+        for i, contour in enumerate(simplified_contours):
+            print(f"Debug: Number of vertices in contour {i}:", len(contour))
 
-    # シンプル化の結果表示
-    display_results(contours_on_org_img, simplified_contours_on_org_img)
+        # シンプル化の結果表示
+        display_results(contours_on_org_img, simplified_contours_on_org_img)
 
+        # 画像を保存
+        root_name = img_name.split('.')[0]
+        output_file = f'{data_folder}/{root_name}_simplified.png'
+        init_file = f'{data_folder}/{root_name}_initial.png'
+        cv2.imwrite(output_file, simplified_contours_on_org_img)
+        cv2.imwrite(init_file, contours_on_org_img)
 
 if __name__ == "__main__":
     main()
