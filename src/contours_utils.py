@@ -17,3 +17,64 @@ def drop_small_contours(contours: List[np.ndarray], min_area: float = 100.0) -> 
         if area >= min_area:
             filtered_contours.append(contour)
     return filtered_contours
+
+
+# 閉じた輪郭点列とコーナーインデックスを受け取り、下記の条件で新たな輪郭点列を生成する
+# - 隣り合うコーナー点間の輪郭点が直線的である場合、その間の頂点を削除
+# - 直線的でない場合は、cv2.approxPolyDPで近似した頂点に置換
+def simplify_contour_with_corners(contour: np.ndarray, corner_indices: List[int],
+                                linearity_threshold: float = 0.95,
+                                approx_epsilon_ratio: float = 0.02) -> np.ndarray:
+        """
+        コーナー点に基づいて輪郭を簡略化する
+        Args:
+            contour (ndarray): 元の閉じた輪郭点列 (N,1,2)
+            corner_indices (list): コーナー点のインデックスリスト
+            linearity_threshold (float): 直線性の閾値（0〜1）。1に近いほど厳密に直線とみなす。
+            approx_epsilon_ratio (float): cv2.approxPolyDPのepsilonの割合。輪郭長に対する比率。
+        Returns:
+            ndarray: 簡略化された輪郭点列 (M,1,2)
+        """ 
+        if len(corner_indices) < 2:
+            return contour  # コーナーが2つ未満なら変更しない
+        N = len(contour)
+        simplified_points = []
+        for i in range(len(corner_indices)):
+            start_idx = corner_indices[i]
+            end_idx = corner_indices[(i + 1) % len(corner_indices)]  # 次のコーナー、最後は最初に戻る
+            if start_idx < end_idx:
+                segment = contour[start_idx:end_idx + 1]
+            else:
+                segment = np.vstack([contour[start_idx:], contour[:end_idx + 1]])   
+            # segmentを[M,1,2]から[M,2]に変換
+            segment = segment.reshape(-1, 2)
+
+            if segment.shape[0] == 0 or segment.shape[1] < 2:
+                continue
+            # 直線性の評価
+            start_point = segment[0, :] # (2,)
+            end_point = segment[-1, :]  # (2,)
+            segment_vec = end_point - start_point
+            segment_length = np.linalg.norm(segment_vec)    
+            if segment_length < 1e-5:
+                linearity = 1.0  # 始点と終点がほぼ同じ場合は直線とみなす
+            else:
+                segment_dir = segment_vec / segment_length
+                vecs_to_start = segment - start_point  # (M,2)
+                projections = np.dot(vecs_to_start, segment_dir)[:, np.newaxis] * segment_dir  # (M,2)
+                dists = np.linalg.norm(vecs_to_start - projections, axis=1)  # (M,)
+                max_dist = np.max(dists)
+                linearity = 1.0 - (max_dist / (segment_length / 2))  # 正規化された直線性指標
+            if linearity >= linearity_threshold:
+                # 直線的なら始点と終点のみ追加
+                simplified_points.append(start_point)
+                simplified_points.append(end_point)
+            else:
+                # 直線的でないなら近似を適用
+                segment_for_arc = segment.astype(np.float32)
+                epsilon = approx_epsilon_ratio * cv2.arcLength(segment_for_arc, closed=False)
+                approx = cv2.approxPolyDP(segment_for_arc, epsilon, closed=False)
+                for point in approx:
+                    simplified_points.append(point[0]) 
+        simplified_contour = np.array(simplified_points, dtype=contour.dtype).reshape(-1, 1, 2)
+        return simplified_contour

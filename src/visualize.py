@@ -21,6 +21,9 @@ def visualize_contours(image: np.ndarray, contours: List[np.ndarray]) -> np.ndar
             fill_color = (line_color * 0.5 + 255 * 0.5).astype(int)
             cv2.fillPoly(output, [cnt], fill_color.tolist())
             cv2.drawContours(output, [cnt], -1, line_color.tolist(), 1)
+            # 頂点を表示
+            for p in cnt:
+                cv2.circle(output, tuple(p[0]), 1, (255, 0, 0), -1)
             M = cv2.moments(cnt)
             if M['m00'] != 0:
                 cX = int(M['m10'] / M['m00'])
@@ -68,5 +71,5 @@ def plot_single_contour(contour: np.ndarray, index: int) -> None:
     plt.ylabel('Y')
     plt.gca().invert_yaxis()
     plt.grid()
-    # plt.show()
+    plt.show()
     # plt.close()
