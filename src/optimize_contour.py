@@ -21,20 +21,22 @@ def cost_fn2(xvec, N, image, params):
         p1 = pts[i]
         p2 = pts[(i+1)%N]
         new_pts.append(p1)
-        new_pts.append((p1 + p2) / 2)
-    pts = np.array(new_pts)
+        new_pts.append((p1 + p2)/3)
+    pts2 = np.array(new_pts)
     # image上のptsの位置の画素値の和をcost1とする
     h, w = image.shape[:2]
-    coords = np.clip(pts.astype(np.int32), [0, 0], [w-1, h-1])
+    coords = np.clip(pts2.astype(np.int32), [0, 0], [w-1, h-1])
     pixel_values = image[coords[:,1], coords[:,0]] / 255.0  # 白黒画像を想定
     # dists = 1.0 - pixel_values  # 白に近いほどコストが小さい
     cost1 = np.sum(pixel_values)*params.lambda_data
+
     # スムージング項
     p_prev = np.roll(pts,  1, axis=0)
     p_next = np.roll(pts, -1, axis=0)
     p_next2 = np.roll(pts, -2, axis=0)
     third_diff = -p_prev + 3*pts - 3*p_next + p_next2
     cost2 = params.lambda_smooth * np.sum(np.abs(third_diff))
+    
     # 90度単位に近い場合は寄せる項
     diffs = p_next - pts
     angles = np.arctan2(diffs[:,1], diffs[:,0])
@@ -43,7 +45,7 @@ def cost_fn2(xvec, N, image, params):
     angle_threshold = np.pi/8
     indices = np.where((angles_mod < angle_threshold) | (angles_mod > np.pi/2 - angle_threshold))[0]
     angle_diffs = np.minimum(angles_mod[indices], np.pi/2 - angles_mod[indices])
-    cost3 = params.lambda_angle * np.sum(angle_diffs**2)
+    cost3 = params.lambda_angle * np.sum(np.abs(angle_diffs))
 
     return cost1 +cost2 + cost3
 
