@@ -38,7 +38,7 @@ def simplify_contour_with_corners(contour: np.ndarray, corner_indices: List[int]
         if len(corner_indices) < 2:
             return contour  # コーナーが2つ未満なら変更しない
         N = len(contour)
-        simplified_points = []
+        simplified_points = [contour[corner_indices[0]][0]]  # 最初のコーナー点
         for i in range(len(corner_indices)):
             start_idx = corner_indices[i]
             end_idx = corner_indices[(i + 1) % len(corner_indices)]  # 次のコーナー、最後は最初に戻る
@@ -66,15 +66,17 @@ def simplify_contour_with_corners(contour: np.ndarray, corner_indices: List[int]
                 max_dist = np.max(dists)
                 linearity = 1.0 - (max_dist / (segment_length / 2))  # 正規化された直線性指標
             if linearity >= linearity_threshold:
-                # 直線的なら始点と終点のみ追加
-                simplified_points.append(start_point)
+                # 直線的なら終点のみ追加
                 simplified_points.append(end_point)
             else:
                 # 直線的でないなら近似を適用
                 segment_for_arc = segment.astype(np.float32)
                 epsilon = approx_epsilon_ratio * cv2.arcLength(segment_for_arc, closed=False)
                 approx = cv2.approxPolyDP(segment_for_arc, epsilon, closed=False)
-                for point in approx:
-                    simplified_points.append(point[0]) 
+                # 近似頂点を追加（始点は既に追加済みのため2番目の点から始める）
+                for point in approx[1:]:
+                    simplified_points.append(point[0])
+        # 最後の点は重複するので削除
+        simplified_points = simplified_points[1:]
         simplified_contour = np.array(simplified_points, dtype=contour.dtype).reshape(-1, 1, 2)
         return simplified_contour
