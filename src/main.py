@@ -10,6 +10,7 @@ from contours_utils import drop_small_contours, simplify_contour_with_corners
 from curvature import curvature_from_closed_contour
 
 from optimize_contour import optimize_contour, Param
+from postprocessing import postprocessing
 from timing import section
 
 
@@ -25,7 +26,7 @@ def main() -> None:
     with section("preprocess"):
         wall_img = load_image_grayscale(f'{data_folder}{img_name}')
         est_image = wall_img.copy()
-        est_image = cv2.GaussianBlur(est_image, (11, 11), 0)
+        est_image = cv2.GaussianBlur(est_image, (9, 9), 0)
         est_image = cv2.normalize(est_image, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX).astype(np.uint8)
 
     with section("contour_extraction"):
@@ -63,13 +64,17 @@ def main() -> None:
                                             approx_epsilon_ratio=0.01)
         with section("optimization"):
             params = Param(
-                lambda_data=0.1,
+                lambda_data=1,
                 lambda_smooth=0.000,
                 lambda_angle=10
             )
             opt_points, result = optimize_contour(simplified_contours3, est_image, params)
             opt_points = opt_points[0].reshape(-1, 1, 2)
             new_contours.append(opt_points.astype(np.int32))
+
+    with section("postprocess"):
+        # postprocessing: new_contoursのエッジ統計処理
+        postprocessing(new_contours, wall_img.shape)
 
     with section("visualize"):
         contours_on_org_img = visualize_contours(wall_img, new_contours)
