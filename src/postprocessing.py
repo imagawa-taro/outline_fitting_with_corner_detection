@@ -2,17 +2,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 from typing import List
 
-def postprocessing(new_contours: List[np.ndarray], image_shape: tuple) -> float:
+def postprocessing(new_contours: List[np.ndarray], image: np.ndarray) -> float:
     """
-    new_contoursに含まれるエッジ情報の統計処理を行い、平均エッジ長を返す
+    new_contoursに含まれるエッジ情報の統計処理を行う
     Args:
         new_contours (List[np.ndarray]): 輪郭リスト (各輪郭は (N, 1, 2) ndarray)
     Returns:
         float: 平均エッジ長（エッジが存在しない場合は0.0）
     """
-    h, w = image_shape[:2]
+    h, w = image.shape[:2]
     hist_x = np.zeros(w, dtype=np.float32)
     hist_y = np.zeros(h, dtype=np.float32)
+
+    # 画像の輝度値の縦・横累積値を計算
+    inv_image = 255 - image  # 輝度反転
+    v_sum = np.sum(inv_image, axis=0).astype(float)  # 縦方向の輝度値の合計
+    h_sum = np.sum(inv_image, axis=1).astype(float)  # 横方向の輝度値の合計
+    v_sum /= 5000.0  # 輝度値を0-255から0-1に正規化
+    h_sum /= 5000.0  # 輝度値を0-255から0-1に正規化
 
     for cnt in new_contours:
         # エッジの向きが垂直に近い場合に始点から終点までの連続したx座標をhist_xに加算
@@ -41,9 +48,11 @@ def postprocessing(new_contours: List[np.ndarray], image_shape: tuple) -> float:
     plt.figure(figsize=(12, 6))
     plt.subplot(1, 2, 1)
     plt.title("Vertical Edge Histogram")
+    plt.bar(range(w), v_sum, width=1)
     plt.bar(range(w), hist_x, width=1)
     plt.subplot(1, 2, 2)
     plt.title("Horizontal Edge Histogram")
+    plt.bar(range(h), h_sum, width=1)
     plt.bar(range(h), hist_y, width=1)
     plt.show()
 

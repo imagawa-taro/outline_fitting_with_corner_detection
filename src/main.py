@@ -74,7 +74,7 @@ def main() -> None:
 
     with section("postprocess"):
         # postprocessing: new_contoursのエッジ統計処理
-        postprocessing(new_contours, wall_img.shape)
+        postprocessing(new_contours, wall_img)
 
     with section("visualize"):
         contours_on_org_img = visualize_contours(wall_img, new_contours)
