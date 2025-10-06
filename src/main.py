@@ -74,10 +74,10 @@ def main() -> None:
 
     with section("postprocess"):
         # postprocessing: new_contoursのエッジ統計処理
-        postprocessing(new_contours, wall_img)
+        aligned_contours = postprocessing(new_contours, wall_img)
 
     with section("visualize"):
-        contours_on_org_img = visualize_contours(wall_img, new_contours)
+        contours_on_org_img = visualize_contours(wall_img, aligned_contours)
         display_results(initial_contours_img, contours_on_org_img)
 
 
