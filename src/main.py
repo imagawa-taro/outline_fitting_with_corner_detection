@@ -19,15 +19,17 @@ def main() -> None:
     メイン処理関数
     """
     data_folder = 'D:/20250929_layout_fitting3/data/'
-    # img_name = '001759.png' # 斜めの壁がある図面
-    img_name = '000325.png' # 曲がった壁がある図面
+    img_name = '001759.png' # 斜めの壁がある図面
+    # img_name = '000325.png' # 曲がった壁がある図面
+    org_name = 'image_org/'+img_name # 曲がった壁がある図面
 
 
     with section("preprocess"):
         wall_img = load_image_grayscale(f'{data_folder}{img_name}')
-        est_image = wall_img.copy()
-        est_image = cv2.GaussianBlur(est_image, (9, 9), 0)
-        est_image = cv2.normalize(est_image, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX).astype(np.uint8)
+        org_img = load_image_grayscale(f'{data_folder}{org_name}')
+        org_image = org_img.copy()
+        org_image = cv2.GaussianBlur(org_image, (9, 9), 0)
+        org_image = cv2.normalize(org_image, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX).astype(np.uint8)
 
     with section("contour_extraction"):
         contours = extract_room_contours(wall_img)
@@ -68,16 +70,16 @@ def main() -> None:
                 lambda_smooth=0.000,
                 lambda_angle=10
             )
-            opt_points, result = optimize_contour(simplified_contours3, est_image, params)
+            opt_points, result = optimize_contour(simplified_contours3, org_image, params)
             opt_points = opt_points[0].reshape(-1, 1, 2)
             new_contours.append(opt_points.astype(np.int32))
 
     with section("postprocess"):
         # postprocessing: new_contoursのエッジ統計処理
-        aligned_contours = postprocessing(new_contours, wall_img)
+        aligned_contours = postprocessing(new_contours, org_image)
 
     with section("visualize"):
-        contours_on_org_img = visualize_contours(wall_img, aligned_contours)
+        contours_on_org_img = visualize_contours(org_img, aligned_contours)
         display_results(initial_contours_img, contours_on_org_img)
 
 
