@@ -2,6 +2,25 @@ import cv2
 import numpy as np
 from typing import List
 
+def get_silhouette(contours: List[np.ndarray], image_shape: tuple) -> List[np.ndarray]:
+    """
+    輪郭リストから全体のconvex hull（シルエット）を求める
+    Args:
+        contours (List[np.ndarray]): 輪郭リスト
+        image_shape (tuple): 画像の形状 (高さ, 幅)
+    Returns:
+        List[np.ndarray]: 凸包（シルエット）を1要素とするリスト
+    """
+    all_points = np.vstack(contours)
+    hull = cv2.convexHull(all_points)
+    mask = np.zeros(image_shape[:2], dtype=np.uint8)
+    cv2.fillConvexPoly(mask, hull, 255)
+    # maskをシュリンク
+    kernel = np.ones((5, 5), np.uint8)
+    mask = cv2.erode(mask, kernel, iterations=1)
+    return [mask]
+
+
 def load_image_grayscale(image_path: str) -> np.ndarray:
     """
     画像をグレースケールで読み込む

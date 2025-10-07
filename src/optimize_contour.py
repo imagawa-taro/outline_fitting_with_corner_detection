@@ -42,7 +42,7 @@ def cost_fn2(xvec: np.ndarray, N: int, image: np.ndarray, params: Param) -> floa
     angles = np.arctan2(diffs[:,1], diffs[:,0])
     angles_mod = np.mod(angles, np.pi/2)
     # angle_mod < thresholdのindexを見つける
-    angle_threshold = np.pi/8
+    angle_threshold = 15 * np.pi/180
     indices = np.where((angles_mod < angle_threshold) | (angles_mod > np.pi/2 - angle_threshold))[0]
     angle_diffs = np.minimum(angles_mod[indices], np.pi/2 - angles_mod[indices])
     cost3 = params.lambda_angle * np.sum(np.abs(angle_diffs))
@@ -60,7 +60,6 @@ def optimize_loop(init_points: np.ndarray, image: np.ndarray, params: Param, met
         maxiter          (int): 最大イテレーション数
         ftol             (float): 目的関数許容誤差"""
     N = init_points.shape[0]
-    # tree = cKDTree(reference_points)
     x0 = init_points.ravel()
     result = minimize(
         lambda xvec: cost_fn2(xvec, N, image, params), x0,

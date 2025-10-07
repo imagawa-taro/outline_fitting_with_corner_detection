@@ -5,7 +5,7 @@ from typing import List, Tuple, Optional
 
 from corner_detection import detect_corners_by_curvature
 from visualize import visualize_contours, display_results, plot_single_contour
-from image_utils import load_image_grayscale, extract_room_contours
+from image_utils import load_image_grayscale, extract_room_contours, get_silhouette
 from contours_utils import drop_small_contours, simplify_contour_with_corners
 from curvature import curvature_from_closed_contour
 
@@ -19,7 +19,10 @@ def main() -> None:
     メイン処理関数
     """
     data_folder = 'D:/20250929_layout_fitting3/data/'
-    img_name = '001759.png' # 斜めの壁がある図面
+    data_list = [263, 325, 406, 426, 547, 581, 1407, 1423, 1521, 1759]  # 処理する画像の番号リスト
+    num = 9  # data_listのインデックスを指定
+    img_name = f'{data_list[num]:06d}.png' 
+    # img_name = '001759.png' # 斜めの壁がある図面9
     # img_name = '000325.png' # 曲がった壁がある図面
     org_name = 'image_org/'+img_name # 曲がった壁がある図面
 
@@ -33,6 +36,7 @@ def main() -> None:
 
     with section("contour_extraction"):
         contours = extract_room_contours(wall_img)
+        silhouette = get_silhouette(contours, wall_img.shape)
         initial_contours_img = visualize_contours(wall_img, contours)
         contours = drop_small_contours(contours, min_area=100.0)
 
@@ -68,18 +72,18 @@ def main() -> None:
             params = Param(
                 lambda_data=1,
                 lambda_smooth=0.000,
-                lambda_angle=10
+                lambda_angle=1
             )
             opt_points, result = optimize_contour(simplified_contours3, org_image, params)
             opt_points = opt_points[0].reshape(-1, 1, 2)
             new_contours.append(opt_points.astype(np.int32))
 
     with section("postprocess"):
-        # postprocessing: new_contoursのエッジ統計処理
-        aligned_contours = postprocessing(new_contours, org_image)
+        aligned_contours = postprocessing(new_contours, org_image, silhouette)
 
     with section("visualize"):
-        contours_on_org_img = visualize_contours(org_img, aligned_contours)
+        # new_contours_img = visualize_contours(org_img, new_contours)
+        contours_on_org_img = visualize_contours(org_image, aligned_contours)
         display_results(initial_contours_img, contours_on_org_img)
 
 
