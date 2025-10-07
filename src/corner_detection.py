@@ -8,18 +8,19 @@ from scipy.ndimage import uniform_filter1d, maximum_filter1d
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 from matplotlib.colors import TwoSlopeNorm
+from typing import Tuple
 
 plt.rcParams['font.family'] = 'MS Gothic'  # Windowsの場合
 # または 'Yu Gothic', 'Meiryo', 'IPAexGothic' など
 
 def curvature_from_closed_contour(
-    x,
-    y,
-    resample_points=None,
-    sg_polyorder=3,
-    window_length_samples=None,
-    window_length_arc=None,
-    return_resampled_coords=False
+    x: np.ndarray,
+    y: np.ndarray,
+    resample_points: int = None,
+    sg_polyorder: int = 3,
+    window_length_samples: int = None,
+    window_length_arc: float = None,
+    return_resampled_coords: bool = False
 ):
     """
     閉じた2D輪郭点列 (x[i], y[i]) から、弧長 s に対する曲率 κ(s) を推定する。
@@ -127,21 +128,21 @@ def curvature_from_closed_contour(
         return s_u, kappa
 
 def detect_corners_by_curvature(
-    x,
-    y,
-    resample_points=None,
-    sg_polyorder=3,
-    window_length_arc=None,
-    window_length_samples=None,
-    integ_window_arc=None,
-    angle_range_deg=(45.0, 135.0),
-    angle_measure='turning',   # 'turning'（接線の回転角Δθ）or 'internal'（内部角）
-    angle_mode='both',         # 'both' | 'unsigned' | 'ccw' | 'cw'
-    angle_margin_deg=0.0,      # 範囲の緩和（±margin）
-    min_kappa=None,
-    min_kappa_factor=1.5,
-    peak_neighborhood_arc=None,
-    return_all=False
+    x: np.ndarray,
+    y: np.ndarray,
+    resample_points: int = None,
+    sg_polyorder: int = 3,
+    window_length_arc: float = None,
+    window_length_samples: int = None,
+    integ_window_arc: float = None,
+    angle_range_deg: Tuple[float, float] = (45.0, 135.0),
+    angle_measure: str = 'turning',   # 'turning'（接線の回転角Δθ）or 'internal'（内部角）
+    angle_mode: str = 'both',         # 'both' | 'unsigned' | 'ccw' | 'cw'
+    angle_margin_deg: float = 0.0,      # 範囲の緩和（±margin）
+    min_kappa: float = None,
+    min_kappa_factor: float = 1.5,
+    peak_neighborhood_arc: float = None,
+    return_all: bool = False
 ):
     """
     曲率 κ(s) の移動積分 Δθ ≈ ∫ κ ds を用いて、指定角度範囲のコーナーを検出する。
@@ -292,7 +293,7 @@ def detect_corners_by_curvature(
 
 
 # 画像を引数として輪郭(closed contour)抽出する関数
-def get_contour_from_image(image):
+def get_contour_from_image(image: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     import cv2
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     _, binary = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
@@ -309,7 +310,7 @@ def get_contour_from_image(image):
 
 # 隣り合うコーナー間の点列が直線か否かを判定する関数を定義
 # 巡回条件を考慮して、各コーナー間の点列を抽出
-def is_line_segment(s_u, kappa, corner_indices, threshold=0.01):
+def is_line_segment(s_u: np.ndarray, kappa: np.ndarray, corner_indices: np.ndarray, threshold: float = 0.01) -> list[bool]:
     M = len(s_u)
     K = len(corner_indices)
     line_flags = []
@@ -324,177 +325,3 @@ def is_line_segment(s_u, kappa, corner_indices, threshold=0.01):
         line_flags.append(max_abs_kappa < threshold) # 閾値以下なら直線と判定
     return line_flags
 
-
-if __name__ == "__main__":
-    '''運用のポイント
-angle_measure='turning' は接線の回転角（外角）による範囲指定です。内部角 α を使いたい場合は angle_measure='internal' を選んでください（α = 180° − |Δθ|）。
-integ_window_arc（角度積分の窓）と window_length_arc（平滑微分の窓）は、コーナーの丸み半径よりやや大きく設定すると安定します。小さすぎるとノイズに敏感、大きすぎると角度が丸まり範囲から外れやすくなります。
-min_kappa_factor を上げると「鈍いコーナー」を除外しやすくなります。誤検出がある場合は peak_neighborhood_arc を広げる、angle_margin_deg を少し増やす、窓長を見直すと改善します。
-符号で凸角/凹角を分けたい場合は angle_mode を使うか、返り値の delta_theta の符号で分類してください。'''
-
-
-    rng = np.random.default_rng(0)
-
-    # 例1: 矩形（内部角=90°）を 45°〜135°の範囲で検出
-    W, H = 120.0, 80.0
-    pts_per_side = 80
-    top = np.column_stack([np.linspace(-W/2, W/2, pts_per_side, endpoint=False), np.full(pts_per_side, H/2)])
-    right = np.column_stack([np.full(pts_per_side, W/2), np.linspace(H/2, -H/2, pts_per_side, endpoint=False)])
-    bottom = np.column_stack([np.linspace(W/2, -W/2, pts_per_side, endpoint=False), np.full(pts_per_side, -H/2)])
-    left = np.column_stack([np.full(pts_per_side, -W/2), np.linspace(-H/2, H/2, pts_per_side, endpoint=False)])
-    xy = np.vstack([top, right, bottom, left])
-    xy_noisy = xy + rng.normal(scale=0.5, size=xy.shape)
-    x, y = xy_noisy[:, 0], xy_noisy[:, 1]
-
-    # 曲率推定（可視化用）
-    s_u, kappa, x_u, y_u = curvature_from_closed_contour(
-        x, y, resample_points=400, sg_polyorder=3, window_length_arc=0.03 * (2*(W+H)), return_resampled_coords=True
-    )
-
-    # コーナー検出：内部角で 45°〜135°
-    corner_idx, s_corners, xy_corners, (s_all, kappa_all, x_all, y_all, dtheta, ang_dict) = detect_corners_by_curvature(
-        x, y,
-        resample_points=400,
-        sg_polyorder=3,
-        window_length_arc=0.03 * (2*(W+H)),
-        integ_window_arc=0.02 * (2*(W+H)),
-        angle_measure='internal',         # 内部角で範囲指定
-        angle_range_deg=(45.0, 135.0),
-        angle_mode='both',
-        angle_margin_deg=5.0,             # 少し緩める
-        return_all=True
-    )
-    print(f"矩形の検出コーナー数: {len(corner_idx)}")
-
-
-    line_segment_flags = is_line_segment(s_u, kappa, corner_idx, threshold=1)
-    for i, is_line in enumerate(line_segment_flags):
-        print(f"コーナー {i} から次のコーナーまでの区間は {'直線' if is_line else '直線でない'} と判定。")
-
-    # 可視化
-    fig, ax = plt.subplots(figsize=(6, 6), dpi=120)
-    ax.scatter(x, y, s=10, c='k', alpha=0.5, label='入力点')
-    pts = np.column_stack([x_u, y_u])
-    segs = np.stack([pts, np.roll(pts, -1, axis=0)], axis=1)
-    vmax = np.nanpercentile(np.abs(kappa), 99.0)
-    norm = TwoSlopeNorm(vmin=-vmax, vcenter=0.0, vmax=vmax)
-    lc = LineCollection(segs, cmap='coolwarm', norm=norm, linewidth=2.0)
-    lc.set_array(kappa)
-    ax.add_collection(lc)
-    cbar = plt.colorbar(lc, ax=ax, fraction=0.046, pad=0.04); cbar.set_label('Curvature κ')
-
-    ax.scatter(xy_corners[:, 0], xy_corners[:, 1], s=70, c='lime', edgecolor='r', marker='*', label='検出コーナー')
-    ax.set_aspect('equal', adjustable='box')
-    ax.set_title('内部角45°〜135°のコーナー検出（矩形）')
-    ax.legend(loc='upper right')
-    plt.tight_layout()
-    plt.show()
-
-    # 例2: 正五角形（内部角≈108°、回転角≈72°）
-    R = 50.0
-    N = 200
-    t = np.linspace(0, 2*np.pi, 5, endpoint=False) + np.pi/5  # 回転してお好みの向きに
-    pent = np.column_stack([R*np.cos(t), R*np.sin(t)])
-    # 各辺を線形補間して点列化（CCW）
-    def interpolate_edges(poly, pts_per_edge=60):
-        segs = []
-        for i in range(len(poly)):
-            p0 = poly[i]
-            p1 = poly[(i+1) % len(poly)]
-            u = np.linspace(0, 1, pts_per_edge, endpoint=False)
-            segs.append(np.outer(1-u, p0) + np.outer(u, p1))
-        return np.vstack(segs)
-    xy2 = interpolate_edges(pent, pts_per_edge=60)
-    xy2_noisy = xy2 + rng.normal(scale=0.3, size=xy2.shape)
-    x2, y2 = xy2_noisy[:, 0], xy2_noisy[:, 1]
-
-    corner_idx2, s_corners2, xy_corners2, (s2, kappa2, x_u2, y_u2, dtheta2, ang_dict2) = detect_corners_by_curvature(
-        x2, y2,
-        resample_points=500,
-        sg_polyorder=3,
-        window_length_arc=0.06 * (5 * 2 * R * np.sin(np.pi/5)),  # 周長の目安で設定
-        integ_window_arc=0.04 * (5 * 2 * R * np.sin(np.pi/5)),
-        angle_measure='turning',           # 回転角で範囲指定（例: 60°〜90°）
-        angle_range_deg=(60.0, 90.0),
-        angle_mode='ccw',
-        angle_margin_deg=5.0,
-        return_all=True
-    )
-    print(f"正五角形の検出コーナー数: {len(corner_idx2)}")
-    line_segment_flags = is_line_segment(s2, kappa2, corner_idx2, threshold=1)
-    for i, is_line in enumerate(line_segment_flags):
-        print(f"コーナー {i} から次のコーナーまでの区間は {'直線' if is_line else '直線でない'} と判定。")
-
-    fig, ax = plt.subplots(figsize=(6, 6), dpi=120)
-    ax.scatter(x2, y2, s=10, c='k', alpha=0.5, label='入力点')
-    pts2 = np.column_stack([x_u2, y_u2])
-    segs2 = np.stack([pts2, np.roll(pts2, -1, axis=0)], axis=1)
-    vmax2 = np.nanpercentile(np.abs(kappa2), 99.0)
-    norm2 = TwoSlopeNorm(vmin=-vmax2, vcenter=0.0, vmax=vmax2)
-    lc2 = LineCollection(segs2, cmap='coolwarm', norm=norm2, linewidth=2.0)
-    lc2.set_array(kappa2)
-    ax.add_collection(lc2)
-    cbar2 = plt.colorbar(lc2, ax=ax, fraction=0.046, pad=0.04); cbar2.set_label('Curvature κ')
-
-    ax.scatter(xy_corners2[:, 0], xy_corners2[:, 1], s=70, c='orange', edgecolor='r', marker='*', label='検出コーナー')
-    ax.set_aspect('equal', adjustable='box')
-    ax.set_title('回転角60°〜90°のコーナー検出（正五角形）')
-    ax.legend(loc='upper right')
-    plt.tight_layout()
-    plt.show()
-
-    # 例3: 画像から輪郭を抽出してコーナー検出
-    import cv2
-    image_path = 'layout1.png'
-    image = cv2.imread(image_path)
-
-    # 画像から輪郭を抽出
-    x3, y3 = get_contour_from_image(image)
-    arc_lengths = np.hypot(np.diff(x3, append=x3[0]), np.diff(y3, append=y3[0]))
-    contour_length=arc_lengths.sum()  # 周長の一定割合の窓
-    # print(f"抽出輪郭点数: {len(x3)}, 周長: {contour_length:.1f} ピクセル")
-
-    # 曲率推定（可視化で使うため再標本化座標も取得）
-    s3, kappa3, x_u3, y_u3 = curvature_from_closed_contour(
-        x3, y3,
-        resample_points=256,
-        sg_polyorder=3,
-        window_length_arc=int(contour_length*0.05),  # 周長の一定割合の窓
-        return_resampled_coords=True
-    )
-
-    # コーナー検出
-    corner_idx3, s_corners3, xy_corners3, (s3, kappa3, x_u3, y_u3, dtheta3, ang_dict3) = detect_corners_by_curvature(
-        x3, y3,
-        resample_points=256,
-        sg_polyorder=3,
-        window_length_arc=0.04 * contour_length,  # 周長の目安で設定
-        integ_window_arc=0.04 * contour_length,
-        angle_measure='turning',           # 回転角で範囲指定（例: 60°〜90°）
-        angle_range_deg=(45.0, 135.0),
-        angle_mode='both',
-        angle_margin_deg=10.0,
-        return_all=True
-    )
-    print(f"検出コーナー数: {len(corner_idx3)}")
-    line_segment_flags = is_line_segment(s3, kappa3, corner_idx3, threshold=1)
-    for i, is_line in enumerate(line_segment_flags):
-        print(f"コーナー {i} から次のコーナーまでの区間は {'直線' if is_line else '直線でない'} と判定。")
-
-    fig, ax = plt.subplots(figsize=(6, 6), dpi=120)
-    ax.scatter(x3, y3, s=10, c='k', alpha=0.5, label='入力点')
-    pts3 = np.column_stack([x_u3, y_u3])
-    segs3 = np.stack([pts3, np.roll(pts3, -1, axis=0)], axis=1)
-    vmax3 = np.nanpercentile(np.abs(kappa3), 99.0)
-    norm3 = TwoSlopeNorm(vmin=-vmax3, vcenter=0.0, vmax=vmax3)
-    lc3 = LineCollection(segs3, cmap='coolwarm', norm=norm3, linewidth=2.0)
-    lc3.set_array(kappa3)
-    ax.add_collection(lc3)
-    cbar3 = plt.colorbar(lc3, ax=ax, fraction=0.046, pad=0.04); cbar3.set_label('Curvature κ')
-
-    ax.scatter(xy_corners3[:, 0], xy_corners3[:, 1], s=70, c='orange', edgecolor='r', marker='*', label='検出コーナー')
-    ax.set_aspect('equal', adjustable='box')
-    ax.set_title('コーナー検出')
-    ax.legend(loc='upper right')
-    plt.tight_layout()
-    plt.show()

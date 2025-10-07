@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from typing import List
+from typing import List, Tuple
 
 def postprocessing(contours: List[np.ndarray], image: np.ndarray) -> float:
     """
@@ -89,7 +89,7 @@ def postprocessing(contours: List[np.ndarray], image: np.ndarray) -> float:
 
 
 # edge_alignment
-def edge_alignment(contours, index_x, index_y, v_peaks, h_peaks, v_sum, h_sum):
+def edge_alignment(contours: List[np.ndarray], index_x: List[Tuple[int, int]], index_y: List[Tuple[int, int]], v_peaks: List[int], h_peaks: List[int], v_sum: np.ndarray, h_sum: np.ndarray):
     new_contours = contours.copy()
     window_size = 2
     # x方向の処理

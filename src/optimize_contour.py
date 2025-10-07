@@ -1,7 +1,7 @@
 '''フィッティングの最適化ルーチン'''
+from typing import Tuple
 import numpy as np
 from scipy.optimize import minimize
-# from scipy.spatial import cKDTree
 
 class Param:
     """最適化パラメータクラス"""
@@ -11,7 +11,7 @@ class Param:
         self.lambda_angle = lambda_angle
 
 
-def cost_fn2(xvec, N, image, params):
+def cost_fn2(xvec: np.ndarray, N: int, image: np.ndarray, params: Param) -> float:
     """フィッティングのコスト関数"""
     # データ項
     pts = xvec.reshape((N, 2))
@@ -49,7 +49,7 @@ def cost_fn2(xvec, N, image, params):
 
     return cost1 +cost2 + cost3
 
-def optimize_loop(init_points, image, params, method='L-BFGS-B', maxiter=500, ftol=1e-9):
+def optimize_loop(init_points: np.ndarray, image: np.ndarray, params: Param, method='L-BFGS-B', maxiter=500, ftol=1e-9):
     """
     2次元上のN点をループ状に最適化
     Args:
@@ -70,7 +70,7 @@ def optimize_loop(init_points, image, params, method='L-BFGS-B', maxiter=500, ft
     opt_points = result.x.reshape((N, 2))
     return opt_points, result
 
-def optimize_contour(init_points, image, params):
+def optimize_contour(init_points: np.ndarray, image: np.ndarray, params: Param) -> Tuple[np.ndarray, dict]:
     """点列をループ状に最適化するラッパー関数"""
     # opt_points, result = optimize_loop(reference_points, init_points, polygon_image, params=params)
     init_points = np.asarray(init_points)

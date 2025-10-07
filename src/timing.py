@@ -8,7 +8,7 @@ _lock = threading.Lock()
 _stats = defaultdict(lambda: {"count": 0, "total": 0.0, "min": float("inf"), "max": 0.0})
 _program_start = time.perf_counter()
 
-def _record(label, dt):
+def _record(label: str, dt: float):
     with _lock:
         s = _stats[label]
         s["count"] += 1
@@ -29,7 +29,7 @@ class section:
         # 例外はそのまま伝播
         return False
 
-def timeit(label=None):
+def timeit(label: str = None):
     def deco(func):
         # メソッドやネスト関数まで分かりやすくしたいなら qualname を使う
         default_name = f"{func.__module__}.{func.__qualname__}"
@@ -44,7 +44,7 @@ def timeit(label=None):
         return wrapper
     return deco
 
-def report(limit=None):
+def report(limit: int = None):
     total_measured = sum(s["total"] for s in _stats.values())
     runtime = time.perf_counter() - _program_start
     rows = sorted(_stats.items(), key=lambda kv: kv[1]["total"], reverse=True)
