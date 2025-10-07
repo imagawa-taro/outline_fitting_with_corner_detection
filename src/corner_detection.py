@@ -14,8 +14,7 @@ plt.rcParams['font.family'] = 'MS Gothic'  # Windowsの場合
 # または 'Yu Gothic', 'Meiryo', 'IPAexGothic' など
 
 def curvature_from_closed_contour(
-    x: np.ndarray,
-    y: np.ndarray,
+    x: np.ndarray,    y: np.ndarray,
     resample_points: int = None,
     sg_polyorder: int = 3,
     window_length_samples: int = None,
@@ -23,9 +22,8 @@ def curvature_from_closed_contour(
     return_resampled_coords: bool = False
 ):
     """
-    閉じた2D輪郭点列 (x[i], y[i]) から、弧長 s に対する曲率 κ(s) を推定する。
-    Savitzky–Golay フィルタを用いて周期的境界条件で平滑微分し、ノイズにロバストな推定を行う。
-
+    閉じた2D輪郭点列 (x[i], y[i]) から、弧長 s に対する曲率 κ(s) を推定
+    Savitzky-Golayフィルタを用いて周期的境界条件で平滑微分しロバスト推定
     Parameters
     ----------
     x, y : array-like, shape (N,)
@@ -48,7 +46,7 @@ def curvature_from_closed_contour(
     Returns
     -------
     s_u : ndarray, shape (M,)
-        一様弧長サンプルの弧長座標（0 から全長 L の手前まで、等間隔）。
+        一様弧長サンプルの弧長座標(0 から全長 L の手前まで、等間隔)
     kappa : ndarray, shape (M,)
         s_u に対応する曲率 κ(s)（符号付き）。向き（反時計回り/時計回り）に依存して符号が変わる。
     x_u, y_u : ndarray, shape (M,), optional
@@ -57,8 +55,7 @@ def curvature_from_closed_contour(
     Notes
     -----
     - 曲率の公式：κ = (x' y'' - y' x'') / ( (x'^2 + y'^2)^(3/2) )
-    - 微分は Savitzky–Golay フィルタ (mode='wrap') による周期的平滑微分で計算。
-    - 入力点間隔が不均一だと微分が不正確になりやすいので、必ず弧長一様へ再標本化してから微分します。
+    - 微分は Savitzky-Golay フィルタ (mode='wrap') による周期的平滑微分で計算。
     """
     x = np.asarray(x, dtype=float)
     y = np.asarray(y, dtype=float)
@@ -89,7 +86,7 @@ def curvature_from_closed_contour(
     x_u = np.interp(s_u, s_ext, x_ext)
     y_u = np.interp(s_u, s_ext, y_ext)
 
-    # Savitzky–Golay 窓幅の決定（奇数、polyorder より大きい、M以下）
+    # Savitzky-Golay 窓幅の決定(奇数、polyorder より大きい、M以下）
     ds = s_u[1] - s_u[0]
     if window_length_arc is not None:
         w = int(round(window_length_arc / ds))
@@ -288,9 +285,6 @@ def detect_corners_by_curvature(
     else:
         return corner_indices, s_u_corners, xy_corners
     
-
-
-
 
 # 画像を引数として輪郭(closed contour)抽出する関数
 def get_contour_from_image(image: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
