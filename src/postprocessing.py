@@ -29,9 +29,12 @@ def postprocessing(contours: List[np.ndarray], image: np.ndarray, silhouette: Li
         for i in range(len(cnt)):
             p1 = cnt[i][0]
             p2 = cnt[(i + 1) % len(cnt)][0]
+            x1, y1 = int(p1[0]), int(p1[1])
+            x2, y2 = int(p2[0]), int(p2[1])
             # p1, p2がシルエットの内側にある場合のみ処理を行う
-            if silhouette[0][int(p1[1]), int(p1[0])] == 0 or silhouette[0][int(p2[1]), int(p2[0])] == 0:
-                continue
+            if (0 <= x1 < w and 0 <= y1 < h and 0 <= x2 < w and 0 <= y2 < h):
+                if silhouette[0][y1, x1] == 0 or silhouette[0][y2, x2] == 0:
+                    continue
 
             # エッジの長さを計算
             edge_length = np.linalg.norm(p2 - p1)

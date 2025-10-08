@@ -20,11 +20,11 @@ def main() -> None:
     """
     data_folder = 'D:/20250929_layout_fitting3/data/'
     data_list = [263, 325, 406, 426, 547, 581, 1407, 1423, 1521, 1759]  # 処理する画像の番号リスト
-    num = 9  # data_listのインデックスを指定
+    num = 9  # data_listのインデックスを指定★2, ★3,4, ★8
     img_name = f'{data_list[num]:06d}.png' 
     # img_name = '001759.png' # 斜めの壁がある図面9
     # img_name = '000325.png' # 曲がった壁がある図面
-    org_name = 'image_org/'+img_name # 曲がった壁がある図面
+    org_name = 'image_org/'+img_name 
 
 
     with section("preprocess"):
@@ -37,7 +37,6 @@ def main() -> None:
     with section("contour_extraction"):
         contours = extract_room_contours(wall_img)
         silhouette = get_silhouette(contours, wall_img.shape)
-        initial_contours_img = visualize_contours(wall_img, contours)
         contours = drop_small_contours(contours, min_area=100.0)
 
     new_contours = []
@@ -68,24 +67,29 @@ def main() -> None:
             simplified_contours3 = simplify_contour_with_corners(corners3, corner_indices=corner_idx3,
                                             linearity_threshold=0.7,
                                             approx_epsilon_ratio=0.01)
+            # plot_single_contour(simplified_contours3, i)
+
         with section("optimization"):
             params = Param(
                 lambda_data=1,
-                lambda_smooth=0.000,
-                lambda_angle=1
+                lambda_pos=1.000,
+                lambda_angle=100
             )
             opt_points, result = optimize_contour(simplified_contours3, org_image, params)
             opt_points = opt_points[0].reshape(-1, 1, 2)
             new_contours.append(opt_points.astype(np.int32))
+            # plot_single_contour(opt_points, i)
 
     with section("postprocess"):
         aligned_contours = postprocessing(new_contours, org_image, silhouette)
 
     with section("visualize"):
-        # new_contours_img = visualize_contours(org_img, new_contours)
+        initial_contours_img = visualize_contours(wall_img, contours)
+        new_contours_img = visualize_contours(wall_img, new_contours)
         contours_on_org_img = visualize_contours(org_image, aligned_contours)
-        display_results(initial_contours_img, contours_on_org_img)
-
+        display_results(initial_contours_img, new_contours_img)
+        display_results(new_contours_img, contours_on_org_img)
+        plt.show()
 
 
 if __name__ == "__main__":

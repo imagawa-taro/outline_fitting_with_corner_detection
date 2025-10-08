@@ -47,7 +47,7 @@ def display_results(original_image: np.ndarray, result_image: np.ndarray) -> Non
     axes[1].axis('off')
     plt.tight_layout()
     plt.savefig('contours.png')
-    plt.show()
+    # plt.show()
 
 
 def plot_single_contour(contour: np.ndarray, index: int) -> None:
