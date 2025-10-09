@@ -75,27 +75,27 @@ def postprocessing(contours: List[np.ndarray], image: np.ndarray, silhouette: Li
                                                      h_peaks, v_sum, h_sum, edge_cumulative_window_size,
                                                        neighbor_distance)
 
-    # histogramの描画
-    plt.figure(figsize=(12, 6))
-    plt.subplot(1, 2, 1)
-    plt.title("Vertical Edge Histogram")
+    # # histogramの描画
+    # plt.figure(figsize=(12, 6))
+    # plt.subplot(1, 2, 1)
+    # plt.title("Vertical Edge Histogram")
 
-    plt.bar(range(w), v_sum, width=1)
-    plt.bar(range(w), hist_x, width=1)
-    if v_peak_coords:
-        plt.scatter(*zip(*v_peak_coords), color='red')
-    if v_means:
-        plt.scatter(v_means, [0]*len(v_means), color='blue')
+    # plt.bar(range(w), v_sum, width=1)
+    # plt.bar(range(w), hist_x, width=1)
+    # if v_peak_coords:
+    #     plt.scatter(*zip(*v_peak_coords), color='red')
+    # if v_means:
+    #     plt.scatter(v_means, [0]*len(v_means), color='blue')
 
-    plt.subplot(1, 2, 2)
-    plt.title("Horizontal Edge Histogram")
+    # plt.subplot(1, 2, 2)
+    # plt.title("Horizontal Edge Histogram")
 
-    plt.bar(range(h), h_sum, width=1)
-    plt.bar(range(h), hist_y, width=1)
-    if h_peak_coords:
-        plt.scatter(*zip(*h_peak_coords), color='red')
-    if h_means:
-        plt.scatter(h_means, [0]*len(h_means), color='blue')
+    # plt.bar(range(h), h_sum, width=1)
+    # plt.bar(range(h), hist_y, width=1)
+    # if h_peak_coords:
+    #     plt.scatter(*zip(*h_peak_coords), color='red')
+    # if h_means:
+    #     plt.scatter(h_means, [0]*len(h_means), color='blue')
 
     return new_contours
 
