@@ -2,7 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from typing import List, Tuple
 
-def postprocessing(contours: List[np.ndarray], image: np.ndarray, silhouette: List[np.ndarray]) -> float:
+def postprocessing(contours: List[np.ndarray], image: np.ndarray, silhouette: List[np.ndarray],
+                    min_edge_length: float = 3, angle_margin: float = 15,
+                      edge_cumulative_window_size: int = 2, neighbor_distance: int = 3) -> float:
+
+    # 積算を英語で
     """
     new_contoursに含まれるエッジ情報の統計処理を行う
     Args:
@@ -38,12 +42,11 @@ def postprocessing(contours: List[np.ndarray], image: np.ndarray, silhouette: Li
 
             # エッジの長さを計算
             edge_length = np.linalg.norm(p2 - p1)
-            #エッジの長さが5未満の場合はスキップ
-            if edge_length < 3:
+            #エッジの長さがmin_edge_length未満の場合はスキップ
+            if edge_length < min_edge_length:
                 continue
             # エッジの角度を計算し、閾値で判定
             angle = np.arctan2(p2[1] - p1[1], p2[0] - p1[0]) * 180 / np.pi
-            angle_margin = 15  # 角度の閾値マージン
             if abs(angle) < angle_margin or abs(angle) > 180 - angle_margin:
                 # 水平に近いエッジの場合, hist_yのp1[0]からp2[0]まで区間に1加算
                 y_start = int(min(p1[1], p2[1]))
@@ -68,7 +71,9 @@ def postprocessing(contours: List[np.ndarray], image: np.ndarray, silhouette: Li
     
     # edge_alignment
     new_contours = contours.copy()
-    new_contours, v_means, h_means = edge_alignment(contours,index_x, index_y, v_peaks, h_peaks, v_sum, h_sum)
+    new_contours, v_means, h_means = edge_alignment(contours, index_x, index_y, v_peaks,
+                                                     h_peaks, v_sum, h_sum, edge_cumulative_window_size,
+                                                       neighbor_distance)
 
     # histogramの描画
     plt.figure(figsize=(12, 6))
@@ -99,9 +104,11 @@ def postprocessing(contours: List[np.ndarray], image: np.ndarray, silhouette: Li
 '''
 全体のエッジを整列
 '''
-def edge_alignment(contours: List[np.ndarray], index_x: List[Tuple[int, int]], index_y: List[Tuple[int, int]], v_peaks: List[int], h_peaks: List[int], v_sum: np.ndarray, h_sum: np.ndarray):
+def edge_alignment(contours: List[np.ndarray], index_x: List[Tuple[int, int]],
+                    index_y: List[Tuple[int, int]], v_peaks: List[int],
+                      h_peaks: List[int], v_sum: np.ndarray, h_sum: np.ndarray,
+                        window_size: int = 2, neighbor_distance: int = 3):
     new_contours = contours.copy()
-    window_size = 2
     # x方向の処理
     v_means = []
     for peak in v_peaks:
@@ -116,7 +123,7 @@ def edge_alignment(contours: List[np.ndarray], index_x: List[Tuple[int, int]], i
         # x座標がpeak近傍のindex_xを探す
         for (c_ind, ii) in index_x:
             xx = new_contours[c_ind][ii][0][0]
-            if abs(xx - peak) < 3:  # 5ピクセル以内なら
+            if abs(xx - peak) < neighbor_distance:  # 近傍距離で判定
                 new_contours[c_ind][ii][0][0] = v_mean
 
     # y方向の処理
@@ -133,6 +140,6 @@ def edge_alignment(contours: List[np.ndarray], index_x: List[Tuple[int, int]], i
         # y座標がpeak近傍のindex_yを探す
         for (c_ind, ii) in index_y:
             yy = new_contours[c_ind][ii][0][1]
-            if abs(yy - peak) < 3:  # 3ピクセル以内なら
+            if abs(yy - peak) < neighbor_distance:  # 近傍距離で判定
                 new_contours[c_ind][ii][0][1] = h_mean
     return new_contours, v_means, h_means

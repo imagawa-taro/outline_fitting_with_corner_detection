@@ -32,9 +32,20 @@ def main() -> None:
         'edge_blur_kernel_size': (9, 9),  # エッジの勾配生成用
         'erosion_kernel_size': (5, 5),  # silhouetteのシュリンク幅
         'min_area': 100.0,  # drop_small_contoursの最小面積
-        'curvature_resample_points': 64,  # コーナー検出の曲率計算の再標本化点数
+        # 'curvature_resample_points': 64,  # コーナー検出の曲率計算の再標本化点数
         'curvature_window_length_arc': 6.0,  # コーナー検出の曲率計算の平滑化窓幅（弧長単位）        # 他のパラメータもここに追加可能
         'corner_detection_resample_points': 256,  # コーナー検出の曲率計算の再標本化点数
+        'integ_window_arc': 6.0,  # コーナー検出の曲率計算の積分窓幅（弧長単位）
+        'corner_angle_range_deg': (45.0, 135.0),  # コーナー検出の角度範囲（度）
+        'angle_margin_deg': 10.0,  # コーナー検出の角度マージン（度）
+        'linearity_threshold': 0.7,  # 輪郭簡略化の直線性閾値
+        'approx_epsilon_ratio': 0.01,  # 輪郭簡略化の近似精度（輪郭長に対する比率）
+        'opt_lambda_pos': 1.000,  # 輪郭最適化の位置ペナルティ
+        'opt_lambda_angle': 100,  # 輪郭最適化の角度ペナルティ
+        'min_edge_length': 3.0,  # 後処理の対象にするエッジの最小長さ
+        'angle_margin_deg': 15.0,  # 後処理のコーナー検出の角度マージン（度）
+        'edge_cumulative_window_size': 2,  # 後処理のエッジ累積の窓幅
+        'neighbor_distance': 3,  # 後処理のエッジ累積の近傍距離
     }
 
     with section("preprocess"):
@@ -52,36 +63,36 @@ def main() -> None:
         with section("corner_detection"):
             x = cnt[:, 0, 0]
             y = cnt[:, 0, 1]
-            s, kappa, x_u, y_u = curvature_from_closed_contour(
-                x, y,
-                resample_points=params['curvature_resample_points'],
-                sg_polyorder=3,
-                window_length_arc=params['curvature_window_length_arc'],
-                return_resampled_coords=True
-            )
+            # s, kappa, x_u, y_u = curvature_from_closed_contour(
+            #     x, y,
+            #     resample_points=params['curvature_resample_points'],
+            #     sg_polyorder=3,
+            #     window_length_arc=params['curvature_window_length_arc'],
+            #     return_resampled_coords=True
+            # )
             corner_idx3, s_corners3, xy_corners3, (s3, kappa3, x_u3, y_u3, dtheta3, ang_dict3) = detect_corners_by_curvature(
                 x, y,
                 resample_points=params['corner_detection_resample_points'],
                 sg_polyorder=3,
-                window_length_arc=6,
-                integ_window_arc=6,
+                window_length_arc=params['curvature_window_length_arc'],
+                integ_window_arc=params['integ_window_arc'],
                 angle_measure='turning',
-                angle_range_deg=(45.0, 135.0),
+                angle_range_deg=params['corner_angle_range_deg'],
                 angle_mode='both',
-                angle_margin_deg=10.0,
+                angle_margin_deg=params['angle_margin_deg'],
                 return_all=True
             )
             corners3 = np.array([x_u3, y_u3]).T.reshape(-1, 1, 2)
             simplified_contours3 = simplify_contour_with_corners(corners3, corner_indices=corner_idx3,
-                                            linearity_threshold=0.7,
-                                            approx_epsilon_ratio=0.01)
+                                            linearity_threshold=params['linearity_threshold'],
+                                            approx_epsilon_ratio=params['approx_epsilon_ratio'])
             # plot_single_contour(simplified_contours3, i)
 
         with section("optimization"):
             params_opt = Param(
                 lambda_data=1,
-                lambda_pos=1.000,
-                lambda_angle=100
+                lambda_pos=params['opt_lambda_pos'],
+                lambda_angle=params['opt_lambda_angle']
             )
             opt_points, result = optimize_contour(simplified_contours3, ref_image, params_opt)
             opt_points = opt_points[0].reshape(-1, 1, 2)
@@ -89,7 +100,10 @@ def main() -> None:
             # plot_single_contour(opt_points, i)
 
     with section("postprocess"):
-        aligned_contours = postprocessing(new_contours, ref_image, silhouette)
+        aligned_contours = postprocessing(new_contours, ref_image, silhouette,
+                                           params['min_edge_length'], params['angle_margin_deg'],
+                                           params['edge_cumulative_window_size'], 
+                                           params['neighbor_distance'])
 
     with section("visualize"):
         initial_contours_img = visualize_contours(wall_img, contours)
