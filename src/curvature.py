@@ -28,13 +28,13 @@ def curvature_from_closed_contour(
         弧長に沿って一様間隔に再標本化するサンプル数 M。
         None の場合は元の点数に合わせる（M = N）。大きくし過ぎると過平滑・計算量増となる。
     sg_polyorder : int
-        Savitzky–Golayフィルタの多項式次数（通常は3～4が推奨）。
+        Savitzky-Golayフィルタの多項式次数(通常は3-4)
     window_length_samples : int or None
-        Savitzky–Golayフィルタの窓幅（サンプル数）。奇数である必要あり。
-        None の場合はデフォルトで全体の約5%を奇数化して使用。
+        Savitzky-Golayフィルタの窓幅(サンプル数,奇数)
+        None: 全体の約5%を奇数化して適用
     window_length_arc : float or None
-        Savitzky–Golayフィルタの窓幅（弧長単位）。指定された場合は ds で換算してサンプル窓幅に変換。
-        window_length_samples と両方指定された場合は window_length_arc を優先。
+        Savitzky-Golayフィルタの窓幅(弧長単位).指定された場合はdsで換算してサンプル窓幅に変換.
+        window_length_samplesと両方指定された場合は window_length_arc を優先.
     return_resampled_coords : bool
         True の場合、平滑化に用いた一様弧長再標本化後の座標 x_u, y_u も返す。
 
