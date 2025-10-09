@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import cv2
+# import cv2
 import numpy as np
 from typing import List, Tuple, Optional
 
@@ -7,20 +7,20 @@ from corner_detection import detect_corners_by_curvature
 from visualize import visualize_contours, display_results, plot_single_contour
 from image_utils import load_image_grayscale, extract_room_contours, get_silhouette, get_blur_image
 from contours_utils import drop_small_contours, simplify_contour_with_corners
-from curvature import curvature_from_closed_contour
+# from curvature import curvature_from_closed_contour
 
 from optimize_contour import optimize_contour, Param
 from postprocessing import postprocessing
 from timing import section
 
 
-def main() -> None:
+def main(num) -> None:
     """
     メイン処理関数
     """
     data_folder = 'D:/20250929_layout_fitting3/data/'
     data_list = [263, 325, 406, 426, 547, 581, 1407, 1423, 1521, 1759]  # 処理する画像の番号リスト
-    num = 9  # data_listのインデックスを指定★2, ★3,4, ★8
+    # num = 6  # data_listのインデックスを指定★2, ★3,4, ★8
     img_name = f'{data_list[num]:06d}.png' 
     # img_name = '001759.png' # 斜めの壁がある図面9
     # img_name = '000325.png' # 曲がった壁がある図面
@@ -29,15 +29,14 @@ def main() -> None:
 
     # パラメータをdictでまとめる例
     params = {
-        'edge_blur_kernel_size': (9, 9),  # エッジの勾配生成用
+        'edge_blur_kernel_size': (15, 15),  # エッジの勾配生成用
         'erosion_kernel_size': (5, 5),  # silhouetteのシュリンク幅
         'min_area': 100.0,  # drop_small_contoursの最小面積
-        # 'curvature_resample_points': 64,  # コーナー検出の曲率計算の再標本化点数
         'curvature_window_length_arc': 6.0,  # コーナー検出の曲率計算の平滑化窓幅（弧長単位）        # 他のパラメータもここに追加可能
         'corner_detection_resample_points': 256,  # コーナー検出の曲率計算の再標本化点数
         'integ_window_arc': 6.0,  # コーナー検出の曲率計算の積分窓幅（弧長単位）
         'corner_angle_range_deg': (45.0, 135.0),  # コーナー検出の角度範囲（度）
-        'angle_margin_deg': 10.0,  # コーナー検出の角度マージン（度）
+        'angle_margin_deg': 5.0,  # コーナー検出の角度マージン（度）
         'linearity_threshold': 0.7,  # 輪郭簡略化の直線性閾値
         'approx_epsilon_ratio': 0.01,  # 輪郭簡略化の近似精度（輪郭長に対する比率）
         'opt_lambda_pos': 1.000,  # 輪郭最適化の位置ペナルティ
@@ -45,12 +44,12 @@ def main() -> None:
         'min_edge_length': 3.0,  # 後処理の対象にするエッジの最小長さ
         'angle_margin_deg': 15.0,  # 後処理のコーナー検出の角度マージン（度）
         'edge_cumulative_window_size': 2,  # 後処理のエッジ累積の窓幅
-        'neighbor_distance': 3,  # 後処理のエッジ累積の近傍距離
+        'neighbor_distance': 3,  # 後処理の画像ヒストグラムの近傍距離
     }
 
     with section("preprocess"):
         wall_img = load_image_grayscale(f'{data_folder}{img_name}')
-        org_img = load_image_grayscale(f'{data_folder}{org_name}')
+        # org_img = load_image_grayscale(f'{data_folder}{org_name}')
         ref_image = get_blur_image(wall_img, params['edge_blur_kernel_size'])
 
     with section("contour_extraction"):
@@ -63,13 +62,6 @@ def main() -> None:
         with section("corner_detection"):
             x = cnt[:, 0, 0]
             y = cnt[:, 0, 1]
-            # s, kappa, x_u, y_u = curvature_from_closed_contour(
-            #     x, y,
-            #     resample_points=params['curvature_resample_points'],
-            #     sg_polyorder=3,
-            #     window_length_arc=params['curvature_window_length_arc'],
-            #     return_resampled_coords=True
-            # )
             corner_idx3, s_corners3, xy_corners3, (s3, kappa3, x_u3, y_u3, dtheta3, ang_dict3) = detect_corners_by_curvature(
                 x, y,
                 resample_points=params['corner_detection_resample_points'],
@@ -109,10 +101,13 @@ def main() -> None:
         initial_contours_img = visualize_contours(wall_img, contours)
         new_contours_img = visualize_contours(wall_img, new_contours)
         contours_on_org_img = visualize_contours(wall_img, aligned_contours)
-        display_results(initial_contours_img, new_contours_img)
-        display_results(new_contours_img, contours_on_org_img)
-        plt.show()
+        # display_results(initial_contours_img, new_contours_img)
+        # display_results(new_contours_img, contours_on_org_img)
+        display_results(initial_contours_img, contours_on_org_img)
+        plt.savefig(f'results/{img_name}', dpi=300)
+        # plt.show()
 
 
 if __name__ == "__main__":
-    main()
+    for ii in range(10):
+        main(ii)
