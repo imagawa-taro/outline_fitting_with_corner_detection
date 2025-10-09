@@ -2,7 +2,21 @@ import cv2
 import numpy as np
 from typing import List
 
-def get_silhouette(contours: List[np.ndarray], image_shape: tuple) -> List[np.ndarray]:
+def get_blur_image(image: np.ndarray, kernel: tuple = (9, 9)) -> np.ndarray:
+    """
+    画像をガウシアンブラー＆正規化して返す
+    Args:
+        image (np.ndarray): 入力画像
+        kernel (tuple): ガウシアンブラーのカーネルサイズ
+    Returns:
+        np.ndarray: ブラー＆正規化後の画像
+    """
+    out = cv2.GaussianBlur(image.copy(), kernel, 0)
+    out = cv2.normalize(out, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX).astype(np.uint8)
+    return out
+
+
+def get_silhouette(contours: List[np.ndarray], image_shape: tuple, kernel_size: tuple = (5, 5)) -> List[np.ndarray]:
     """
     輪郭リストから全体のconvex hull（シルエット）を求める
     Args:
@@ -16,7 +30,7 @@ def get_silhouette(contours: List[np.ndarray], image_shape: tuple) -> List[np.nd
     mask = np.zeros(image_shape[:2], dtype=np.uint8)
     cv2.fillConvexPoly(mask, hull, 255)
     # maskをシュリンク
-    kernel = np.ones((5, 5), np.uint8)
+    kernel = np.ones(kernel_size, np.uint8)
     mask = cv2.erode(mask, kernel, iterations=1)
     return [mask]
 
