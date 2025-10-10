@@ -1,5 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from typing import List, Tuple
 
 def postprocessing(contours: List[np.ndarray], image: np.ndarray, silhouette: List[np.ndarray],

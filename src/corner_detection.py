@@ -2,12 +2,9 @@ import numpy as np
 from scipy.ndimage import uniform_filter1d, maximum_filter1d
 from scipy.signal import savgol_filter
 import matplotlib.pyplot as plt
-from matplotlib.collections import LineCollection
-from matplotlib.colors import TwoSlopeNorm
-from scipy.ndimage import uniform_filter1d, maximum_filter1d
-import matplotlib.pyplot as plt
-from matplotlib.collections import LineCollection
-from matplotlib.colors import TwoSlopeNorm
+# from matplotlib.collections import LineCollection
+# from matplotlib.colors import TwoSlopeNorm
+# from scipy.ndimage import uniform_filter1d, maximum_filter1d
 from typing import Tuple
 
 plt.rcParams['font.family'] = 'MS Gothic'  # Windowsの場合

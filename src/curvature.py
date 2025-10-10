@@ -1,9 +1,9 @@
 import numpy as np
-import cv2
+# import cv2
 from scipy.signal import savgol_filter
-import matplotlib.pyplot as plt
-from matplotlib.collections import LineCollection
-from matplotlib.colors import TwoSlopeNorm
+# import matplotlib.pyplot as plt
+# from matplotlib.collections import LineCollection
+# from matplotlib.colors import TwoSlopeNorm
 from typing import List
 
 def curvature_from_closed_contour(

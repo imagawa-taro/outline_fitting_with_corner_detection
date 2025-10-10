@@ -1,5 +1,5 @@
+import cv2
 import matplotlib.pyplot as plt
-# import cv2
 import numpy as np
 from typing import List, Tuple, Optional
 
@@ -104,7 +104,9 @@ def main(num) -> None:
         # display_results(initial_contours_img, new_contours_img)
         # display_results(new_contours_img, contours_on_org_img)
         display_results(initial_contours_img, contours_on_org_img)
-        plt.savefig(f'results/{img_name}', dpi=300)
+        # plt.savefig(f'results/{img_name}', dpi=300)
+        cv2.imwrite(f'results/{img_name}_aligned.png', contours_on_org_img)
+
         # plt.show()
 
 
