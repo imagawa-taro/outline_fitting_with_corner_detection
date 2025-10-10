@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from typing import List, Tuple, Optional
 from scipy.spatial import cKDTree
+from timing import section
 
 def load_image_grayscale(image_path: str) -> np.ndarray:
     """
@@ -344,7 +345,8 @@ def main() -> None:
 
         ### 輪郭の直線化、頂点削減処理 ###
         # 輪郭をシンプルにする処理
-        simplified_contours, detected_intersections = simplify_contours_with_hough_intersections(contours, wall_img.shape, 10)
+        with section("simplify_contours"):
+            simplified_contours, detected_intersections = simplify_contours_with_hough_intersections(contours, wall_img.shape, 10)
 
         # シンプル化された輪郭を元画像に描画
         simplified_contours_on_org_img = visualize_contours(org_img, simplified_contours)
