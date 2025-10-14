@@ -5,8 +5,6 @@ from typing import List, Tuple
 def postprocessing(contours: List[np.ndarray], image: np.ndarray, silhouette: List[np.ndarray],
                     min_edge_length: float = 3, angle_margin: float = 15,
                       edge_cumulative_window_size: int = 2, neighbor_distance: int = 3) -> float:
-
-    # 積算を英語で
     """
     new_contoursに含まれるエッジ情報の統計処理を行う
     Args:

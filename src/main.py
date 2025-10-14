@@ -7,8 +7,6 @@ from corner_detection import detect_corners_by_curvature
 from visualize import visualize_contours, display_results, plot_single_contour
 from image_utils import load_image_grayscale, extract_room_contours, get_silhouette, get_blur_image
 from contours_utils import drop_small_contours, simplify_contour_with_corners
-# from curvature import curvature_from_closed_contour
-
 from optimize_contour import optimize_contour, Param
 from postprocessing import postprocessing
 from timing import section
@@ -27,12 +25,12 @@ def main(num) -> None:
     org_name = 'image_org/'+img_name 
 
 
-    # パラメータをdictでまとめる例
+    # パラメータをdictで集約
     params = {
         'edge_blur_kernel_size': (15, 15),  # エッジの勾配生成用
         'erosion_kernel_size': (5, 5),  # silhouetteのシュリンク幅
         'min_area': 100.0,  # drop_small_contoursの最小面積
-        'curvature_window_length_arc': 6.0,  # コーナー検出の曲率計算の平滑化窓幅（弧長単位）        # 他のパラメータもここに追加可能
+        'curvature_window_length_arc': 6.0,  # コーナー検出の曲率計算の平滑化窓幅（弧長単位）
         'corner_detection_resample_points': 256,  # コーナー検出の曲率計算の再標本化点数
         'integ_window_arc': 6.0,  # コーナー検出の曲率計算の積分窓幅（弧長単位）
         'corner_angle_range_deg': (45.0, 135.0),  # コーナー検出の角度範囲（度）

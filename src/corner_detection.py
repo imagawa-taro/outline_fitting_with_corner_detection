@@ -140,7 +140,6 @@ def detect_corners_by_curvature(
 ):
     """
     曲率 κ(s) の移動積分 Δθ ≈ ∫ κ ds を用いて、指定角度範囲のコーナーを検出する。
-
     Parameters
     ----------
     x, y : array-like
