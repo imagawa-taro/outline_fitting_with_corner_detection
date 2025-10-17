@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+plt.rcParams['font.family'] = 'Noto Sans CJK JP'  # 日本語フォント設定
 from typing import List
 
 def visualize_contours(image: np.ndarray, contours: List[np.ndarray]) -> np.ndarray:
