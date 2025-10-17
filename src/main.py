@@ -16,13 +16,13 @@ def main(num) -> None:
     """
     メイン処理関数
     """
-    data_folder = 'D:/20250929_layout_fitting3/data/'
-    data_list = [263, 325, 406, 426, 547, 581, 1407, 1423, 1521, 1759]  # 処理する画像の番号リスト
+    data_folder = '../data/'
+    data_list = [260, 325, 406, 426, 547, 581, 1407, 1423, 1521, 1759]  # 処理する画像の番号リスト
     # num = 6  # data_listのインデックスを指定★2, ★3,4, ★8
     img_name = f'{data_list[num]:06d}.png' 
     # img_name = '001759.png' # 斜めの壁がある図面9
     # img_name = '000325.png' # 曲がった壁がある図面
-    org_name = 'image_org/'+img_name 
+    # org_name = 'image_org/'+img_name 
 
 
     # パラメータをdictで集約
@@ -109,5 +109,5 @@ def main(num) -> None:
 
 
 if __name__ == "__main__":
-    for ii in range(10):
+    for ii in range(1):
         main(ii)
