@@ -317,14 +317,16 @@ def drop_small_contours(contours: List[np.ndarray], min_area: float = 100.0) -> 
     
     return filtered_contours
 
-def main() -> None:
+def main(data_folder: str) -> None:
     """
     メイン処理関数
     """
-    num_list = [263, 325, 406, 426, 547, 581, 1407, 1423, 1521, 1759]
-    data_folder = 'D:/20250929_layout_fitting3/data/'
-    for i in range(len(num_list)):
-        img_name = f'{num_list[i]:06d}.png'
+    results_folder = '../results/'
+    os.makedirs(results_folder, exist_ok=True)
+    file_list = [f for f in os.listdir(data_folder) if f.endswith('.png')]
+    # num_list = [263, 325, 406, 426, 547, 581, 1407, 1423, 1521, 1759]
+    # data_folder = 'D:/20250929_layout_fitting3/data/'
+    for img_name in file_list:
         # img_name = '001759.png' # 斜めの壁がある図面
         # img_name = '000325.png' # 曲がった壁がある図面
 
@@ -364,10 +366,12 @@ def main() -> None:
 
         # 画像を保存
         root_name = img_name.split('.')[0]
-        output_file = f'{data_folder}/{root_name}_simplified.png'
-        init_file = f'{data_folder}/{root_name}_initial.png'
-        cv2.imwrite(output_file, simplified_contours_on_org_img)
-        cv2.imwrite(init_file, contours_on_org_img)
+        output_file = f'{results_folder}/{root_name}_simplified.png'
+        # init_file = f'{data_folder}/{root_name}_initial.png'
+        # contours_on_org_imgとsimplified_contours_on_org_imgを結合して保存
+        combined_img = np.hstack((contours_on_org_img, simplified_contours_on_org_img))
+        cv2.imwrite(output_file, combined_img)
 
 if __name__ == "__main__":
-    main()
+    data_folder = '../data/'
+    main(data_folder)
