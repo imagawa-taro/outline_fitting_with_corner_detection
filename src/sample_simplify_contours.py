@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 from typing import List, Tuple, Optional
 from scipy.spatial import cKDTree
 from timing import section
