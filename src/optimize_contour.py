@@ -23,11 +23,9 @@ def cost_fn2(xvec: np.ndarray, N: int, image: np.ndarray, init_points: np.ndarra
         new_pts.append(p1)
         new_pts.append((p1 + p2)/3)
     pts2 = np.array(new_pts)
-    pts2 = np.nan_to_num(pts2, nan=0.0, posinf=0.0, neginf=0.0)
-    pts2 = np.round(pts2)
-    # image上のptsの位置の画素値の和をcost1とする
+    pts2 = np.where(np.isfinite(pts2), pts2, 0)  # 有限値以外を0に
     h, w = image.shape[:2]
-    coords = np.clip(pts2.astype(np.int32), [0, 0], [w-1, h-1])
+    coords = np.clip(np.round(pts2).astype(np.int32), [0, 0], [w-1, h-1])
     pixel_values = image[coords[:,1], coords[:,0]] / 255.0  # 白黒画像を想定
     # dists = 1.0 - pixel_values  # 白に近いほどコストが小さい
     cost1 = np.sum(pixel_values)*params.lambda_data
