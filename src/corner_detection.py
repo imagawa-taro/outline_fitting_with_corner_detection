@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 from typing import Tuple
 
 plt.rcParams['font.family'] = 'MS Gothic'  # Windowsの場合
-# または 'Yu Gothic', 'Meiryo', 'IPAexGothic' など
 
 def curvature_from_closed_contour(
     x: np.ndarray,    y: np.ndarray,
