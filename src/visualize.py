@@ -60,7 +60,7 @@ def plot_single_contour(contour: np.ndarray, index: int) -> None:
     """
     plt.figure()
     #始点と終点は色で区別
-    plt.plot(contour[:, 0, 0], contour[:, 0, 1], marker='o')
+    plt.plot(contour[:, 0, 0], contour[:, 0, 1], marker='.')
     plt.plot(contour[0, 0, 0], contour[0, 0, 1], marker='o', color='red', label='Start')
     plt.plot(contour[-1, 0, 0], contour[-1, 0, 1], marker='o', color='blue', label='End')
     #最初の点は最後の点とつなげる
@@ -72,5 +72,6 @@ def plot_single_contour(contour: np.ndarray, index: int) -> None:
     plt.ylabel('Y')
     plt.gca().invert_yaxis()
     plt.grid()
-    plt.show()
-    # plt.close()
+    plt.savefig(f'contour_{index}.png')
+    # plt.show()
+    plt.close()
