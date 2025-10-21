@@ -35,8 +35,11 @@ def simplify_contour_with_corners(contour: np.ndarray, corner_indices: List[int]
         Returns:
             ndarray: 簡略化された輪郭点列 (M,1,2)
         """ 
+        # コーナーが2つ未満の場合はcv2.approxPolyDPのみ適用
         if len(corner_indices) < 2:
-            return contour  # コーナーが2つ未満なら変更しない
+            contour_for_arc = contour.astype(np.float32)
+            return cv2.approxPolyDP(contour_for_arc, approx_epsilon_ratio/2 * cv2.arcLength(contour_for_arc, closed=False), closed=False)
+
         N = len(contour)
         simplified_points = [contour[corner_indices[0]][0]]  # 最初のコーナー点
         for i in range(len(corner_indices)):
@@ -78,5 +81,7 @@ def simplify_contour_with_corners(contour: np.ndarray, corner_indices: List[int]
                     simplified_points.append(point[0])
         # 最後の点は重複するので削除
         simplified_points = simplified_points[1:]
+        if len(simplified_points) == 0:
+            return contour
         simplified_contour = np.array(simplified_points, dtype=contour.dtype).reshape(-1, 1, 2)
         return simplified_contour
