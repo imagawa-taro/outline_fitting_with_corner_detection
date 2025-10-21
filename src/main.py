@@ -19,14 +19,8 @@ def main(data_folder) -> None:
     """
     results_folder = '../results/'
     os.makedirs(results_folder, exist_ok=True)
-    data_list = [int(f.split('.')[0]) for f in os.listdir(data_folder) if f.endswith('.png')]
-    # data_list = [260, 325, 406, 426, 547, 581, 1407, 1423, 1521, 1759]  # 処理する画像の番号リスト
-    # num = 6  # data_listのインデックスを指定★2, ★3,4, ★8
-    # img_name = f'{data_list[num]:06d}.png' 
-    # img_name = '001759.png' # 斜めの壁がある図面9
-    # img_name = '000325.png' # 曲がった壁がある図面
-    # org_name = 'image_org/'+img_name 
-
+    # data_list = [int(f.split('.')[0]) for f in os.listdir(data_folder) if f.endswith('.png')]
+    data_list = [1235] #, 858, 1346]  # 処理する画像の番号リスト
 
     # パラメータをdictで集約
     params = {
@@ -38,7 +32,7 @@ def main(data_folder) -> None:
         'integ_window_arc': 6.0,  # コーナー検出の曲率計算の積分窓幅（弧長単位）
         'corner_angle_range_deg': (45.0, 135.0),  # コーナー検出の角度範囲（度）
         'angle_margin_deg': 5.0,  # コーナー検出の角度マージン（度）
-        'linearity_threshold': 0.7,  # 輪郭簡略化の直線性閾値
+        'linearity_threshold': 0.85,  # 輪郭簡略化の直線性閾値
         'approx_epsilon_ratio': 0.01,  # 輪郭簡略化の近似精度（輪郭長に対する比率）
         'opt_lambda_pos': 1.000,  # 輪郭最適化の位置ペナルティ
         'opt_lambda_angle': 100,  # 輪郭最適化の角度ペナルティ
@@ -82,6 +76,9 @@ def main(data_folder) -> None:
                 simplified_contours3 = simplify_contour_with_corners(corners3, corner_indices=corner_idx3,
                                                 linearity_threshold=params['linearity_threshold'],
                                                 approx_epsilon_ratio=params['approx_epsilon_ratio'])
+                # corner_idx3が空の場合は元の輪郭を使う
+                # if len(corner_idx3) == 0:
+                #     simplified_contours3 = cnt
                 # plot_single_contour(simplified_contours3, i)
 
             with section("optimization"):
