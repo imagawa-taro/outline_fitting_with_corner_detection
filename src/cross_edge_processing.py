@@ -121,8 +121,8 @@ def find_self_intersections(contour, count_collinear_touch=True, eps=1e-9, retur
 if __name__ == "__main__":
     new_points = 5
     size = 200
-    pts = np.array([np.random.rand(new_points)*size, np.random.rand(new_points)*size], dtype=np.float64)
-    # pts = np.array([[50, 50], [150, 150], [50, 150], [150, 50]], dtype=np.float64).T
+    # pts = np.array([np.random.rand(new_points)*size, np.random.rand(new_points)*size], dtype=np.float64)
+    pts = np.array([[50, 50], [150, 150], [150, 100], [100, 100], [100, 50]], dtype=np.float64).T
         #最初の点を最後に追加して閉じる
     pts = np.hstack([pts, pts[:, :1]])
     pts = pts.T
@@ -138,7 +138,7 @@ if __name__ == "__main__":
     for inter in inters:
         if inter["point"] is not None:
             plt.plot(inter["point"][0], inter["point"][1], 'rx', markersize=10)
-    plt.title("Self-Intersecting Polyline with Intersections")
+    plt.title("Self-Intersectinons")
     plt.axis('equal')
-    plt.savefig("self_intersection_demo.png")
+    plt.savefig("self_intersection.png")
     plt.close()
