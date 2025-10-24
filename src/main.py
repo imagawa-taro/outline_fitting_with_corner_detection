@@ -4,6 +4,9 @@ import numpy as np
 import os
 from typing import List, Tuple, Optional
 
+import sys
+sys.path.append('/u/home/imagawa/work/outline_fitting_with_corner_detection/src')
+
 from corner_detection import detect_corners_by_curvature
 from visualize import visualize_contours, display_results, plot_single_contour
 from image_utils import load_image_grayscale, extract_room_contours, get_silhouette, get_blur_image
@@ -25,7 +28,7 @@ def contour_optimization_pipeline(image: np.ndarray, contours: List[np.ndarray],
     """
     # 輪郭抽出
     # contours = extract_room_contours(image, threshold=225)
-    # contours = drop_small_contours(contours, params['min_area'])
+    contours = drop_small_contours(contours, params['min_area'])
     silhouette = get_silhouette(contours, image.shape, params['erosion_kernel_size'])
 
     new_contours = []
@@ -46,6 +49,19 @@ def contour_optimization_pipeline(image: np.ndarray, contours: List[np.ndarray],
             return_all=True
         )
         corners = np.array([x_u, y_u]).T.reshape(-1, 1, 2)
+
+        # data check: cornersにNoneやinfが含まれていないか
+        if corners is None or corners.size == 0:
+            print(f"Contour {i}: Corners are None or empty. Skipping optimization.")
+            new_contours.append(cnt.astype(np.int32))
+            continue
+        corners_float = np.asarray(corners, dtype=float)
+        if np.any(~np.isfinite(corners_float)):
+            print(f"Contour {i}: Corners contain invalid values. Skipping optimization.")
+            new_contours.append(cnt.astype(np.int32))
+            continue
+
+
         simplified_contours = simplify_contour_with_corners(corners, corner_indices=corner_idx,
                                             linearity_threshold=params['linearity_threshold'],
                                             approx_epsilon_ratio=params['approx_epsilon_ratio'])
@@ -79,7 +95,7 @@ def main2(data_folder) -> None:
     data_list = [3, 858, 1346]  # 処理する画像の番号リスト
 
     # パラメータをdictで集約
-    params = {
+    contour_opt_params = {
         'edge_blur_kernel_size': (15, 15),  # エッジの勾配生成用
         'erosion_kernel_size': (5, 5),  # silhouetteのシュリンク幅
         'min_area': 100.0,  # drop_small_contoursの最小面積
@@ -103,9 +119,9 @@ def main2(data_folder) -> None:
         print(f'Processing image: {img_name}')
         wall_img = load_image_grayscale(f'{data_folder}{img_name}')
         contours = extract_room_contours(wall_img, threshold=225)
-        contours = drop_small_contours(contours, params['min_area'])
+        contours = drop_small_contours(contours, contour_opt_params['min_area'])
 
-        aligned_contours = contour_optimization_pipeline(wall_img, contours, params)
+        aligned_contours = contour_optimization_pipeline(wall_img, contours, contour_opt_params)
 
         with section("visualize"):
             initial_contours_img = visualize_contours(wall_img, extract_room_contours(wall_img, threshold=225))
