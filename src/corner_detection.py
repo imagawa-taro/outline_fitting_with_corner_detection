@@ -59,9 +59,11 @@ def curvature_from_closed_contour(
         raise ValueError("x, y は同じ長さの1次元配列である必要があります。")
     N = x.size
     if N < 5:
-        raise ValueError("点数が少なすぎます（>=5 推奨）。")
+        print("点数が少なすぎます（>=5 推奨）。")
+        # エラーコード
+        return None, None, None, None
 
-    # 距離と弧長の計算（閉曲線として最後から最初のセグメントも考慮）
+    # 距離と弧長の計算（閉曲線として最後から最初のセグメントも考慮） 
     dx = np.diff(x, append=x[0])
     dy = np.diff(y, append=y[0])
     seg_lengths = np.hypot(dx, dy)  # 各セグメント長（N個、最後は N-1 -> 0 の閉じセグメント）
@@ -190,6 +192,12 @@ def detect_corners_by_curvature(
         window_length_samples=window_length_samples,
         return_resampled_coords=True
     )
+    # 曲線情報が取得できなかった場合はコーナー数0で返す
+    if s_u is None or kappa is None or x_u is None or y_u is None:
+        if return_all:
+            return np.array([], dtype=int), np.array([], dtype=float), np.empty((0,2)), (None, None, None, None, None, None)
+        else:
+            return np.array([], dtype=int), np.array([], dtype=float), np.empty((0,2))
     M = len(s_u)
     ds = s_u[1] - s_u[0]
     L = ds * M
