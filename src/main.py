@@ -139,11 +139,12 @@ def main2(data_folder) -> None:
             combined_img = np.vstack((combined_img1, combined_img2))
             cv2.imwrite(f'{results_folder}{img_name}', combined_img)
 
-        num_points_list.append([img_number, len(aligned_contours)])
+        # aligned_contoursの全cntに含まれる頂点数の総和を記録
+            total_points = sum(len(cnt) for cnt in aligned_contours)
+            num_points_list.append([img_number, total_points])
 
     # num_points_listをCSVファイルに保存
     np.savetxt(f'{results_folder}num_points_list.csv', num_points_list, delimiter=',', header='ImageNumber,NumContours', fmt='%d', comments='')
-
 
 def main(data_folder) -> None:
     """
