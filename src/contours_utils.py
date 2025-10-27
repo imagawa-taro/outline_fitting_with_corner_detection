@@ -24,7 +24,7 @@ def drop_small_contours(contours: List[np.ndarray], min_area: float = 100.0) -> 
 # - 直線的でない場合は、cv2.approxPolyDPで近似した頂点に置換
 def simplify_contour_with_corners(contour: np.ndarray, corner_indices: List[int],
                                 linearity_threshold: float = 0.95,
-                                approx_epsilon_ratio: float = 0.02) -> np.ndarray:
+                                approx_epsilon_ratio: float = 10) -> np.ndarray:
         """
         コーナー点に基づいて輪郭を簡略化する
         Args:
@@ -38,7 +38,9 @@ def simplify_contour_with_corners(contour: np.ndarray, corner_indices: List[int]
         # コーナーが2つ未満の場合はcv2.approxPolyDPのみ適用
         if len(corner_indices) < 2:
             contour_for_arc = contour.astype(np.float32)
-            return cv2.approxPolyDP(contour_for_arc, approx_epsilon_ratio/2 * cv2.arcLength(contour_for_arc, closed=False), closed=False)
+            # max_arc_distance = approx_epsilon_ratio/2 * cv2.arcLength(contour_for_arc, closed=False)
+            max_arc_distance = approx_epsilon_ratio # ratioから絶対値へ変更
+            return cv2.approxPolyDP(contour_for_arc, max_arc_distance, closed=False)
 
         N = len(contour)
         simplified_points = [contour[corner_indices[0]][0]]  # 最初のコーナー点
@@ -74,8 +76,9 @@ def simplify_contour_with_corners(contour: np.ndarray, corner_indices: List[int]
             else:
                 # 直線的でないなら近似を適用
                 segment_for_arc = segment.astype(np.float32)
-                epsilon = approx_epsilon_ratio * cv2.arcLength(segment_for_arc, closed=False)
-                approx = cv2.approxPolyDP(segment_for_arc, epsilon, closed=False)
+                # max_arc_distance = approx_epsilon_ratio * cv2.arcLength(segment_for_arc, closed=False)
+                max_arc_distance = approx_epsilon_ratio # ratioから絶対値へ変更
+                approx = cv2.approxPolyDP(segment_for_arc, max_arc_distance, closed=False)
                 # 近似頂点を追加（始点は既に追加済みのため2番目の点から始める）
                 for point in approx[1:]:
                     simplified_points.append(point[0])

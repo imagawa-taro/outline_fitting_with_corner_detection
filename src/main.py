@@ -61,7 +61,6 @@ def contour_optimization_pipeline(image: np.ndarray, contours: List[np.ndarray],
             new_contours.append(cnt.astype(np.int32))
             continue
 
-
         simplified_contours = simplify_contour_with_corners(corners, corner_indices=corner_idx,
                                             linearity_threshold=params['linearity_threshold'],
                                             approx_epsilon_ratio=params['approx_epsilon_ratio'])
@@ -92,7 +91,8 @@ def main2(data_folder) -> None:
     """
     results_folder = '../results_pipeline/'
     os.makedirs(results_folder, exist_ok=True)
-    data_list = [3, 858, 1346]  # 処理する画像の番号リスト
+    data_list = [int(f.split('.')[0]) for f in os.listdir(data_folder) if f.endswith('.png')]
+    # data_list = [3, 858, 1346]  # 処理する画像の番号リスト
 
     # パラメータをdictで集約
     contour_opt_params = {
@@ -105,7 +105,7 @@ def main2(data_folder) -> None:
         'corner_angle_range_deg': (45.0, 135.0),  # コーナー検出の角度範囲（度）
         'angle_margin_deg': 5.0,  # コーナー検出の角度マージン（度）
         'linearity_threshold': 0.85,  # 輪郭簡略化の直線性閾値
-        'approx_epsilon_ratio': 0.01,  # 輪郭簡略化の近似精度（輪郭長に対する比率）
+        'approx_epsilon_ratio': 5,  # 輪郭簡略化の近似精度（絶対値）
         'opt_lambda_pos': 1.000,  # 輪郭最適化の位置ペナルティ
         'opt_lambda_angle': 100,  # 輪郭最適化の角度ペナルティ
         'min_edge_length': 3.0,  # 後処理の対象にするエッジの最小長さ
@@ -113,13 +113,14 @@ def main2(data_folder) -> None:
         'edge_cumulative_window_size': 2,  # 後処理のエッジ累積の窓幅
         'neighbor_distance': 3,  # 後処理の画像ヒストグラムの近傍距離
     }
+    num_points_list = []
     # data_listのループ処理
     for img_number in data_list:    
         img_name = f'{img_number:06d}.png'
         print(f'Processing image: {img_name}')
         wall_img = load_image_grayscale(f'{data_folder}{img_name}')
         contours = extract_room_contours(wall_img, threshold=225)
-        contours = drop_small_contours(contours, contour_opt_params['min_area'])
+        # contours = drop_small_contours(contours, contour_opt_params['min_area'])
 
         aligned_contours = contour_optimization_pipeline(wall_img, contours, contour_opt_params)
 
@@ -137,6 +138,11 @@ def main2(data_folder) -> None:
             combined_img2 = np.hstack((initial_contours_img, new_contours_img))   
             combined_img = np.vstack((combined_img1, combined_img2))
             cv2.imwrite(f'{results_folder}{img_name}', combined_img)
+
+        num_points_list.append([img_number, len(aligned_contours)])
+
+    # num_points_listをCSVファイルに保存
+    np.savetxt(f'{results_folder}num_points_list.csv', num_points_list, delimiter=',', header='ImageNumber,NumContours', fmt='%d', comments='')
 
 
 def main(data_folder) -> None:
@@ -159,7 +165,7 @@ def main(data_folder) -> None:
         'corner_angle_range_deg': (45.0, 135.0),  # コーナー検出の角度範囲（度）
         'angle_margin_deg': 5.0,  # コーナー検出の角度マージン（度）
         'linearity_threshold': 0.85,  # 輪郭簡略化の直線性閾値
-        'approx_epsilon_ratio': 0.01,  # 輪郭簡略化の近似精度（輪郭長に対する比率）
+        'approx_epsilon_ratio': 5,  # 輪郭簡略化の近似精度（絶対値）
         'opt_lambda_pos': 1.000,  # 輪郭最適化の位置ペナルティ
         'opt_lambda_angle': 100,  # 輪郭最適化の角度ペナルティ
         'min_edge_length': 3.0,  # 後処理の対象にするエッジの最小長さ
