@@ -95,7 +95,7 @@ def main2(data_folder) -> None:
     results_folder = '../results_pipeline/'
     os.makedirs(results_folder, exist_ok=True)
     data_list = [int(f.split('.')[0]) for f in os.listdir(data_folder) if f.endswith('.png')]
-    # data_list = [3, 858, 1346]  # 処理する画像の番号リスト
+    # data_list = [126]#3, 858, 1346]  # 処理する画像の番号リスト
 
     # パラメータをdictで集約
     contour_opt_params = {
@@ -125,7 +125,6 @@ def main2(data_folder) -> None:
         wall_img = load_image_grayscale(f'{data_folder}{img_name}')
         contours = extract_room_contours(wall_img, threshold=225)
         # contours = drop_small_contours(contours, contour_opt_params['min_area'])
-
         aligned_contours = contour_optimization_pipeline(wall_img, contours, contour_opt_params)
 
         with section("visualize"):
@@ -333,8 +332,8 @@ def main3(data_folder) -> None:
 
 if __name__ == "__main__":
     import time
-    data_folder = '../data/'
+    data_folder = '/u/home/imagawa/work/outline_fitting_with_corner_detection/data/'
     time1 = time.time()
-    main3(data_folder)
+    main2(data_folder)
     time2 = time.time()
     print(f"Processing time: {time2 - time1} seconds")
