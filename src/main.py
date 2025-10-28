@@ -1,8 +1,10 @@
+import time
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 from typing import List, Tuple, Optional
+import concurrent.futures
 
 import sys
 sys.path.append('/u/home/imagawa/work/outline_fitting_with_corner_detection/src')
@@ -15,6 +17,7 @@ from optimize_contour import optimize_contour, Param
 from postprocessing import postprocessing
 from cross_edge_processing import find_self_intersections
 from timing import section
+
 
 def contour_optimization_pipeline(image: np.ndarray, contours: List[np.ndarray], params: dict) -> List[np.ndarray]:
     """
@@ -114,6 +117,7 @@ def main2(data_folder) -> None:
         'neighbor_distance': 3,  # 後処理の画像ヒストグラムの近傍距離
     }
     num_points_list = []
+    num_contours_list = []
     # data_listのループ処理
     for img_number in data_list:    
         img_name = f'{img_number:06d}.png'
@@ -139,12 +143,14 @@ def main2(data_folder) -> None:
             combined_img = np.vstack((combined_img1, combined_img2))
             cv2.imwrite(f'{results_folder}{img_name}', combined_img)
 
-        # aligned_contoursの全cntに含まれる頂点数の総和を記録
+            # aligned_contoursの全cntに含まれる頂点数の総和を記録
             total_points = sum(len(cnt) for cnt in aligned_contours)
             num_points_list.append([img_number, total_points])
+            num_contours_list.append([img_number, len(aligned_contours)])   
 
     # num_points_listをCSVファイルに保存
-    np.savetxt(f'{results_folder}num_points_list.csv', num_points_list, delimiter=',', header='ImageNumber,NumContours', fmt='%d', comments='')
+    np.savetxt(f'{results_folder}num_points_list.csv', num_points_list, delimiter=',', header='ImageNumber,NumPoints', fmt='%d', comments='')
+    np.savetxt(f'{results_folder}num_contours_list.csv', num_contours_list, delimiter=',', header='ImageNumber,NumContours', fmt='%d', comments='')
 
 def main(data_folder) -> None:
     """
@@ -260,6 +266,75 @@ def main(data_folder) -> None:
             # plt.show()
 
 
+def process_single_image(args):
+    img_number, data_folder, contour_opt_params, results_folder = args
+    img_name = f'{img_number:06d}.png'
+    print(f'Processing image: {img_name}')
+    wall_img = load_image_grayscale(f'{data_folder}{img_name}')
+    contours = extract_room_contours(wall_img, threshold=225)
+    aligned_contours = contour_optimization_pipeline(wall_img, contours, contour_opt_params)
+
+    initial_contours_img = visualize_contours(wall_img, extract_room_contours(wall_img, threshold=225))
+    new_contours_img = visualize_contours(wall_img, aligned_contours)
+    wall_img_for_stack = wall_img
+    if wall_img_for_stack.ndim == 2:
+        wall_img_for_stack = np.expand_dims(wall_img_for_stack, axis=-1)
+        wall_img_for_stack = np.repeat(wall_img_for_stack, 3, axis=-1)
+    combined_img1 = np.hstack((wall_img_for_stack, initial_contours_img))
+    combined_img2 = np.hstack((initial_contours_img, new_contours_img))   
+    combined_img = np.vstack((combined_img1, combined_img2))
+    cv2.imwrite(f'{results_folder}{img_name}', combined_img)
+    total_points = sum(len(cnt) for cnt in aligned_contours)
+    num_points = [img_number, total_points]
+    num_contours = [img_number, len(aligned_contours)]
+    return num_points, num_contours
+
+def main3(data_folder) -> None:
+    """
+    メイン処理関数（画像ごと並列化版）
+    """
+    results_folder = '../results_pipeline/'
+    os.makedirs(results_folder, exist_ok=True)
+    data_list = [int(f.split('.')[0]) for f in os.listdir(data_folder) if f.endswith('.png')]
+    # data_list = [3, 858, 1346]  # 処理する画像の番号リスト
+
+    # パラメータをdictで集約
+    contour_opt_params = {
+        'edge_blur_kernel_size': (15, 15),  # エッジの勾配生成用
+        'erosion_kernel_size': (5, 5),  # silhouetteのシュリンク幅
+        'min_area': 100.0,  # drop_small_contoursの最小面積
+        'curvature_window_length_arc': 6.0,  # コーナー検出の曲率計算の平滑化窓幅（弧長単位）
+        'corner_detection_resample_points': 256,  # コーナー検出の曲率計算の再標本化点数
+        'integ_window_arc': 6.0,  # コーナー検出の曲率計算の積分窓幅（弧長単位）
+        'corner_angle_range_deg': (45.0, 135.0),  # コーナー検出の角度範囲（度）
+        'angle_margin_deg': 5.0,  # コーナー検出の角度マージン（度）
+        'linearity_threshold': 0.85,  # 輪郭簡略化の直線性閾値
+        'approx_epsilon_ratio': 5,  # 輪郭簡略化の近似精度（絶対値）
+        'opt_lambda_pos': 1.000,  # 輪郭最適化の位置ペナルティ
+        'opt_lambda_angle': 100,  # 輪郭最適化の角度ペナルティ
+        'min_edge_length': 3.0,  # 後処理の対象にするエッジの最小長さ
+        'angle_margin_deg': 15.0,  # 後処理のコーナー検出の角度マージン（度）
+        'edge_cumulative_window_size': 2,  # 後処理のエッジ累積の窓幅
+        'neighbor_distance': 3,  # 後処理の画像ヒストグラムの近傍距離
+    }
+    num_points_list = []
+    num_contours_list = []
+    # 並列実行用の引数リスト
+    args_list = [(img_number, data_folder, contour_opt_params, results_folder) for img_number in data_list]
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        results = list(executor.map(process_single_image, args_list))
+    for num_points, num_contours in results:
+        num_points_list.append(num_points)
+        num_contours_list.append(num_contours)
+    # num_points_listをCSVファイルに保存
+    np.savetxt(f'{results_folder}num_points_list.csv', num_points_list, delimiter=',', header='ImageNumber,NumPoints', fmt='%d', comments='')
+    np.savetxt(f'{results_folder}num_contours_list.csv', num_contours_list, delimiter=',', header='ImageNumber,NumContours', fmt='%d', comments='')
+
+
 if __name__ == "__main__":
+    import time
     data_folder = '../data/'
-    main2(data_folder)
+    time1 = time.time()
+    main3(data_folder)
+    time2 = time.time()
+    print(f"Processing time: {time2 - time1} seconds")
