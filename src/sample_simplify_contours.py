@@ -328,6 +328,7 @@ def main(data_folder: str) -> None:
     # num_list = [263, 325, 406, 426, 547, 581, 1407, 1423, 1521, 1759]
     # data_folder = 'D:/20250929_layout_fitting3/data/'
     num_points_list = []
+    num_contours_list = []
     for img_name in file_list:
         # img_name = '001759.png' # 斜めの壁がある図面
         # img_name = '000325.png' # 曲がった壁がある図面
@@ -374,13 +375,17 @@ def main(data_folder: str) -> None:
         combined_img = np.hstack((contours_on_org_img, simplified_contours_on_org_img))
         cv2.imwrite(output_file, combined_img)
 
-        # ファイル名の
+        # ファイル名の番号を取得
         file_num = int(root_name)
         num_points_list.append([ file_num, sum(len(cnt) for cnt in simplified_contours)])
+        num_contours_list.append([ file_num, len(simplified_contours)])
 
     # num_points_listをcsvで保存
     num_points_array = np.array(num_points_list)
     np.savetxt(f'{results_folder}/num_points_list.csv', num_points_array, delimiter=',', fmt='%d', header='file_num,num_points', comments='')
+    # num_contours_listをcsvで保存
+    num_contours_array = np.array(num_contours_list)
+    np.savetxt(f'{results_folder}/num_contours_list.csv', num_contours_array, delimiter=',', fmt='%d', header='file_num,num_contours', comments='')
 
 if __name__ == "__main__":
     data_folder = '../data/'
