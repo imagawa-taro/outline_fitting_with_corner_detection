@@ -12,8 +12,6 @@ class Param:
 
 
 def cost_fn2(xvec: np.ndarray, N: int, image: np.ndarray, init_points: np.ndarray, params: Param) -> float:
-    """フィッティングのコスト関数"""
-    # データ項
     pts = xvec.reshape((N, 2))
     # ptsの内分点を追加して補間点を増やす
     new_pts = []
@@ -22,10 +20,16 @@ def cost_fn2(xvec: np.ndarray, N: int, image: np.ndarray, init_points: np.ndarra
         p2 = pts[(i+1)%N]
         new_pts.append(p1)
         new_pts.append((p1 + p2)/3)
-    pts2 = np.array(new_pts)
-    pts2 = np.where(np.isfinite(pts2), pts2, 0)  # 有限値以外を0に
+    pts2 = np.array(new_pts, dtype=float)
+    pts2 = np.nan_to_num(pts2)
+    pts2[~np.isfinite(pts2)] = 0
     h, w = image.shape[:2]
-    coords = np.clip(np.round(np.nan_to_num(pts2)).astype(np.int32), [0, 0], [w-1, h-1])
+    # pts2をクリップ処理
+    pts2_clipped = np.clip(pts2, [0, 0], [w-1, h-1])
+    pts2_rounded = np.round(pts2_clipped)
+    pts2_int = pts2_rounded.astype(np.int32)
+    coords = np.clip(pts2_int, [0, 0], [w-1, h-1])
+    
     pixel_values = image[coords[:,1], coords[:,0]] / 255.0  # 白黒画像を想定
     # dists = 1.0 - pixel_values  # 白に近いほどコストが小さい
     cost1 = np.sum(pixel_values)*params.lambda_data
