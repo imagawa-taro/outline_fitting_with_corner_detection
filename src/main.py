@@ -48,7 +48,7 @@ def contour_optimization_pipeline(image: np.ndarray, contours: List[np.ndarray],
             angle_measure='turning',
             angle_range_deg=params['corner_angle_range_deg'],
             angle_mode='both',
-            angle_margin_deg=params['angle_margin_deg'],
+            angle_margin_deg=params['angle_margin_deg_corner'],
             return_all=True
         )
         corners = np.array([x_u, y_u]).T.reshape(-1, 1, 2)
@@ -81,7 +81,7 @@ def contour_optimization_pipeline(image: np.ndarray, contours: List[np.ndarray],
 
     # 後処理
     aligned_contours = postprocessing(new_contours, image, silhouette,
-                                    params['min_edge_length'], params['angle_margin_deg'],
+                                    params['min_edge_length'], params['angle_margin_deg_post'],
                                     params['edge_cumulative_window_size'], 
                                     params['neighbor_distance'])
     return aligned_contours
@@ -106,13 +106,13 @@ def main2(data_folder) -> None:
         'corner_detection_resample_points': 256,  # コーナー検出の曲率計算の再標本化点数
         'integ_window_arc': 6.0,  # コーナー検出の曲率計算の積分窓幅（弧長単位）
         'corner_angle_range_deg': (45.0, 135.0),  # コーナー検出の角度範囲（度）
-        'angle_margin_deg': 5.0,  # コーナー検出の角度マージン（度）
+        'angle_margin_deg_corner': 15.0,  # コーナー検出の角度マージン（度）
         'linearity_threshold': 0.85,  # 輪郭簡略化の直線性閾値
         'approx_epsilon_ratio': 5,  # 輪郭簡略化の近似精度（絶対値）
         'opt_lambda_pos': 1.000,  # 輪郭最適化の位置ペナルティ
         'opt_lambda_angle': 100,  # 輪郭最適化の角度ペナルティ
         'min_edge_length': 3.0,  # 後処理の対象にするエッジの最小長さ
-        'angle_margin_deg': 15.0,  # 後処理のコーナー検出の角度マージン（度）
+        'angle_margin_deg_post': 15.0,  # 後処理のコーナー検出の角度マージン（度）
         'edge_cumulative_window_size': 2,  # 後処理のエッジ累積の窓幅
         'neighbor_distance': 3,  # 後処理の画像ヒストグラムの近傍距離
     }
@@ -146,6 +146,14 @@ def main2(data_folder) -> None:
             total_points = sum(len(cnt) for cnt in aligned_contours)
             num_points_list.append([img_number, total_points])
             num_contours_list.append([img_number, len(aligned_contours)])   
+
+        # with section("cross_edge_processing"):
+        #     for i, cnt in enumerate(contours):#aligned_contours):
+        #         has_cross, inters = find_self_intersections(cnt, count_collinear_touch=False, return_points=True)
+        #         if has_cross:
+        #             print(f"Contour {i} has self-intersections:")
+        #             for inter in inters:
+        #                 print(f"  Intersection between edges {inter['i']} and {inter['j']} at {inter['point']}")
 
     # num_points_listをCSVファイルに保存
     np.savetxt(f'{results_folder}num_points_list.csv', num_points_list, delimiter=',', header='ImageNumber,NumPoints', fmt='%d', comments='')
