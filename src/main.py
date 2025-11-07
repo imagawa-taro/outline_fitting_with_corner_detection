@@ -84,7 +84,7 @@ def contour_optimization_pipeline(image: np.ndarray, contours: List[np.ndarray],
                                     params['min_edge_length'], params['angle_margin_deg_post'],
                                     params['edge_cumulative_window_size'], 
                                     params['neighbor_distance'])
-    return aligned_contours
+    return aligned_contours, new_contours, simplified_contours
 
 
 # piplineのテスト用メイン関数
@@ -94,8 +94,8 @@ def main2(data_folder) -> None:
     """
     results_folder = '../results_pipeline/'
     os.makedirs(results_folder, exist_ok=True)
-    data_list = [int(f.split('.')[0]) for f in os.listdir(data_folder) if f.endswith('.png')]
-    # data_list = [126]#3, 858, 1346]  # 処理する画像の番号リスト
+    # data_list = [int(f.split('.')[0]) for f in os.listdir(data_folder) if f.endswith('.png')]
+    data_list = [146, 260, 273]  # 処理する画像の番号リスト
 
     # パラメータをdictで集約
     contour_opt_params = {
@@ -103,7 +103,7 @@ def main2(data_folder) -> None:
         'erosion_kernel_size': (5, 5),  # silhouetteのシュリンク幅
         'min_area': 100.0,  # drop_small_contoursの最小面積
         'curvature_window_length_arc': 6.0,  # コーナー検出の曲率計算の平滑化窓幅（弧長単位）
-        'corner_detection_resample_points': 256,  # コーナー検出の曲率計算の再標本化点数
+        'corner_detection_resample_points': 1024,  # コーナー検出の曲率計算の再標本化点数
         'integ_window_arc': 6.0,  # コーナー検出の曲率計算の積分窓幅（弧長単位）
         'corner_angle_range_deg': (45.0, 135.0),  # コーナー検出の角度範囲（度）
         'angle_margin_deg_corner': 15.0,  # コーナー検出の角度マージン（度）
@@ -123,9 +123,12 @@ def main2(data_folder) -> None:
         img_name = f'{img_number:06d}.png'
         print(f'Processing image: {img_name}')
         wall_img = load_image_grayscale(f'{data_folder}{img_name}')
+        # 画像を180度回転
+        # wall_img = cv2.rotate(wall_img, cv2.ROTATE_180)
         contours = extract_room_contours(wall_img, threshold=225)
         # contours = drop_small_contours(contours, contour_opt_params['min_area'])
-        aligned_contours = contour_optimization_pipeline(wall_img, contours, contour_opt_params)
+        con1, con2, con3  = contour_optimization_pipeline(wall_img, contours, contour_opt_params)
+        aligned_contours = con2
 
         with section("visualize"):
             initial_contours_img = visualize_contours(wall_img, extract_room_contours(wall_img, threshold=225))
