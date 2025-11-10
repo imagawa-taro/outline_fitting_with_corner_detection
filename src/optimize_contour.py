@@ -83,5 +83,5 @@ def optimize_contour(init_points: np.ndarray, image: np.ndarray, params: Param) 
     # opt_points, result = optimize_loop(reference_points, init_points, polygon_image, params=params)
     init_points = np.asarray(init_points)
     opt_points, result = optimize_loop(init_points, image, params=params, maxiter=2000, ftol=1e-12)
-    opt_points = [opt_points.reshape(-1, 1, 2).astype(np.int32)]
+    opt_points = [np.round(opt_points.reshape(-1, 1, 2)).astype(np.int32)]
     return opt_points, result
