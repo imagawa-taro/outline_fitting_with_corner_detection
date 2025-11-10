@@ -31,14 +31,15 @@ def contour_optimization_pipeline(image: np.ndarray, contours: List[np.ndarray],
     """
     # 輪郭抽出
     # contours = extract_room_contours(image, threshold=225)
+    contours_org = contours.copy()
     contours = drop_small_contours(contours, params['min_area'])
     silhouette = get_silhouette(contours, image.shape, params['erosion_kernel_size'])
 
     new_contours = []
     for i, cnt in enumerate(contours):
         # コーナー検出
-        x = cnt[:, 0, 0]
-        y = cnt[:, 0, 1]
+        x = cnt[:, 0, 0].copy()
+        y = cnt[:, 0, 1].copy()
         corner_idx, s_corners, xy_corners, (ss, kappa, x_u, y_u, *_) = detect_corners_by_curvature(
             x, y,
             resample_points=params['corner_detection_resample_points'],
@@ -76,15 +77,21 @@ def contour_optimization_pipeline(image: np.ndarray, contours: List[np.ndarray],
         )
         ref_image = get_blur_image(image, params['edge_blur_kernel_size'])
         opt_points, result = optimize_contour(simplified_contours, ref_image, params_opt)
-        opt_points = opt_points[0].reshape(-1, 1, 2)
-        new_contours.append(opt_points.astype(np.int32))
+
+        # opt_points = corners.reshape(-1, 1, 2)
+        # opt_points = simplified_contours.reshape(-1, 1, 2)
+        # opt_points = opt_points[0].reshape(-1, 1, 2)
+        # new_contours.append((np.round(opt_points)).astype(np.int32))
+        new_contours.append(cnt)
 
     # 後処理
     aligned_contours = postprocessing(new_contours, image, silhouette,
                                     params['min_edge_length'], params['angle_margin_deg_post'],
                                     params['edge_cumulative_window_size'], 
                                     params['neighbor_distance'])
-    return aligned_contours, new_contours, simplified_contours
+    test_img = visualize_contours(image, contours_org)
+    cv2.imwrite('../results_pipeline/test3.png', test_img)
+    return aligned_contours, contours_org, simplified_contours
 
 
 # piplineのテスト用メイン関数
@@ -95,7 +102,7 @@ def main2(data_folder) -> None:
     results_folder = '../results_pipeline/'
     os.makedirs(results_folder, exist_ok=True)
     # data_list = [int(f.split('.')[0]) for f in os.listdir(data_folder) if f.endswith('.png')]
-    data_list = [146, 260, 273]  # 処理する画像の番号リスト
+    data_list = [260]#[146, 260, 273]  # 処理する画像の番号リスト
 
     # パラメータをdictで集約
     contour_opt_params = {
@@ -103,7 +110,7 @@ def main2(data_folder) -> None:
         'erosion_kernel_size': (5, 5),  # silhouetteのシュリンク幅
         'min_area': 100.0,  # drop_small_contoursの最小面積
         'curvature_window_length_arc': 6.0,  # コーナー検出の曲率計算の平滑化窓幅（弧長単位）
-        'corner_detection_resample_points': 1024,  # コーナー検出の曲率計算の再標本化点数
+        'corner_detection_resample_points': 256,  # コーナー検出の曲率計算の再標本化点数
         'integ_window_arc': 6.0,  # コーナー検出の曲率計算の積分窓幅（弧長単位）
         'corner_angle_range_deg': (45.0, 135.0),  # コーナー検出の角度範囲（度）
         'angle_margin_deg_corner': 15.0,  # コーナー検出の角度マージン（度）
@@ -126,13 +133,15 @@ def main2(data_folder) -> None:
         # 画像を180度回転
         # wall_img = cv2.rotate(wall_img, cv2.ROTATE_180)
         contours = extract_room_contours(wall_img, threshold=225)
+
         # contours = drop_small_contours(contours, contour_opt_params['min_area'])
         con1, con2, con3  = contour_optimization_pipeline(wall_img, contours, contour_opt_params)
         aligned_contours = con2
 
         with section("visualize"):
             initial_contours_img = visualize_contours(wall_img, extract_room_contours(wall_img, threshold=225))
-            new_contours_img = visualize_contours(wall_img, aligned_contours)
+            new_contours_img = visualize_contours(wall_img, con2)
+            # new_contours_img = visualize_contours(wall_img, contours)
             # display_results(initial_contours_img, new_contours_img)
             # plt.savefig(f'{results_folder}{img_name}', dpi=300)
             # plt.show()
@@ -143,7 +152,12 @@ def main2(data_folder) -> None:
             combined_img1 = np.hstack((wall_img_for_stack, initial_contours_img))
             combined_img2 = np.hstack((initial_contours_img, new_contours_img))   
             combined_img = np.vstack((combined_img1, combined_img2))
-            cv2.imwrite(f'{results_folder}{img_name}', combined_img)
+            # cv2.imwrite(f'{results_folder}{img_name}', combined_img)
+            cv2.imwrite(f'{results_folder}{img_name}', new_contours_img)
+
+            # contours2 = drop_small_contours(contours, contour_opt_params['min_area'])
+            # contours2_img = visualize_contours(wall_img, contours2)
+            # cv2.imwrite(f'{results_folder}{img_name}', contours2_img)
 
             # aligned_contoursの全cntに含まれる頂点数の総和を記録
             total_points = sum(len(cnt) for cnt in aligned_contours)
