@@ -68,8 +68,9 @@ def postprocessing(contours: List[np.ndarray], image: np.ndarray, silhouette: Li
     h_peak_coords = [(y, hist_y[y]) for y in h_peaks]
     
     # edge_alignment
-    new_contours = contours.copy()
-    new_contours, v_means, h_means = edge_alignment(contours, index_x, index_y, v_peaks,
+    new_contours = [c.copy() for c in contours]
+    # new_contours = contours.copy()
+    new_contours, v_means, h_means = edge_alignment(new_contours, index_x, index_y, v_peaks,
                                                      h_peaks, v_sum, h_sum, edge_cumulative_window_size,
                                                        neighbor_distance)
 
@@ -106,7 +107,8 @@ def edge_alignment(contours: List[np.ndarray], index_x: List[Tuple[int, int]],
                     index_y: List[Tuple[int, int]], v_peaks: List[int],
                       h_peaks: List[int], v_sum: np.ndarray, h_sum: np.ndarray,
                         window_size: int = 2, neighbor_distance: int = 3):
-    new_contours = contours.copy()
+    # new_contours = contours.copy()
+    new_contours = [c.copy() for c in contours]
     # x方向の処理
     v_means = []
     for peak in v_peaks:
@@ -122,7 +124,7 @@ def edge_alignment(contours: List[np.ndarray], index_x: List[Tuple[int, int]],
         for (c_ind, ii) in index_x:
             xx = new_contours[c_ind][ii][0][0]
             if abs(xx - peak) < neighbor_distance:  # 近傍距離で判定
-                new_contours[c_ind][ii][0][0] = v_mean
+                new_contours[c_ind][ii][0][0] = np.round(v_mean)
 
     # y方向の処理
     h_means = []
@@ -139,5 +141,5 @@ def edge_alignment(contours: List[np.ndarray], index_x: List[Tuple[int, int]],
         for (c_ind, ii) in index_y:
             yy = new_contours[c_ind][ii][0][1]
             if abs(yy - peak) < neighbor_distance:  # 近傍距離で判定
-                new_contours[c_ind][ii][0][1] = h_mean
+                new_contours[c_ind][ii][0][1] = np.round(h_mean)
     return new_contours, v_means, h_means
