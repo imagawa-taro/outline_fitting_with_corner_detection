@@ -79,19 +79,19 @@ def contour_optimization_pipeline(image: np.ndarray, contours: List[np.ndarray],
         opt_points, result = optimize_contour(simplified_contours, ref_image, params_opt)
 
         # opt_points = corners.reshape(-1, 1, 2)
-        # opt_points = simplified_contours.reshape(-1, 1, 2)
+        opt_points = simplified_contours.reshape(-1, 1, 2)
         # opt_points = opt_points[0].reshape(-1, 1, 2)
-        # new_contours.append((np.round(opt_points)).astype(np.int32))
-        new_contours.append(cnt)
+        new_contours.append((np.round(opt_points)).astype(np.int32))
+        # new_contours.append(cnt)
 
     # 後処理
     aligned_contours = postprocessing(new_contours, image, silhouette,
                                     params['min_edge_length'], params['angle_margin_deg_post'],
                                     params['edge_cumulative_window_size'], 
                                     params['neighbor_distance'])
-    test_img = visualize_contours(image, contours_org)
-    cv2.imwrite('../results_pipeline/test3.png', test_img)
-    return aligned_contours, contours_org, simplified_contours
+    # test_img = visualize_contours(image, contours_org)
+    # cv2.imwrite('../results_pipeline/test4.png', test_img)
+    return aligned_contours, opt_points, simplified_contours
 
 
 # piplineのテスト用メイン関数
@@ -131,7 +131,7 @@ def main2(data_folder) -> None:
         print(f'Processing image: {img_name}')
         wall_img = load_image_grayscale(f'{data_folder}{img_name}')
         # 画像を180度回転
-        # wall_img = cv2.rotate(wall_img, cv2.ROTATE_180)
+        wall_img = cv2.rotate(wall_img, cv2.ROTATE_180)
         contours = extract_room_contours(wall_img, threshold=225)
 
         # contours = drop_small_contours(contours, contour_opt_params['min_area'])
@@ -140,7 +140,7 @@ def main2(data_folder) -> None:
 
         with section("visualize"):
             initial_contours_img = visualize_contours(wall_img, extract_room_contours(wall_img, threshold=225))
-            new_contours_img = visualize_contours(wall_img, con2)
+            new_contours_img = visualize_contours(wall_img, con1)
             # new_contours_img = visualize_contours(wall_img, contours)
             # display_results(initial_contours_img, new_contours_img)
             # plt.savefig(f'{results_folder}{img_name}', dpi=300)
