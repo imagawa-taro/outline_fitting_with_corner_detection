@@ -4,13 +4,13 @@ from typing import List, Tuple
 
 def postprocessing(contours: List[np.ndarray], image: np.ndarray, silhouette: List[np.ndarray],
                     min_edge_length: float = 3, angle_margin: float = 15,
-                      edge_cumulative_window_size: int = 2, neighbor_distance: int = 3) -> float:
+                      edge_cumulative_window_size: int = 2, neighbor_distance: int = 3) -> List[np.ndarray]:
     """
     new_contoursに含まれるエッジ情報の統計処理を行う
     Args:
         new_contours (List[np.ndarray]): 輪郭リスト (各輪郭は (N, 1, 2) ndarray)
     Returns:
-        float: 平均エッジ長（エッジが存在しない場合は0.0）
+        List[np.ndarray]: 処理後の輪郭リスト
     """
     # 画像の輝度値の縦・横累積値を計算
     inv_image = 255 - image  # 輝度反転
