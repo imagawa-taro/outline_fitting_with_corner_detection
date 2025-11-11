@@ -94,8 +94,8 @@ def main2(data_folder) -> None:
     """
     results_folder = '../results_pipeline/'
     os.makedirs(results_folder, exist_ok=True)
-    data_list = [int(f.split('.')[0]) for f in os.listdir(data_folder) if f.endswith('.png')]
-    # data_list = [126]#3, 858, 1346]  # 処理する画像の番号リスト
+    # data_list = [int(f.split('.')[0]) for f in os.listdir(data_folder) if f.endswith('.png')]
+    data_list = [146, 260, 273]#3, 858, 1346]  # 処理する画像の番号リスト
 
     # パラメータをdictで集約
     contour_opt_params = {
@@ -123,6 +123,8 @@ def main2(data_folder) -> None:
         img_name = f'{img_number:06d}.png'
         print(f'Processing image: {img_name}')
         wall_img = load_image_grayscale(f'{data_folder}{img_name}')
+        # 画像を180度回転
+        # wall_img = cv2.rotate(wall_img, cv2.ROTATE_180)
         contours = extract_room_contours(wall_img, threshold=225)
         # contours = drop_small_contours(contours, contour_opt_params['min_area'])
         aligned_contours = contour_optimization_pipeline(wall_img, contours, contour_opt_params)
@@ -140,7 +142,7 @@ def main2(data_folder) -> None:
             combined_img1 = np.hstack((wall_img_for_stack, initial_contours_img))
             combined_img2 = np.hstack((initial_contours_img, new_contours_img))   
             combined_img = np.vstack((combined_img1, combined_img2))
-            cv2.imwrite(f'{results_folder}{img_name}', combined_img)
+            cv2.imwrite(f'{results_folder}{img_name}', new_contours_img)
 
             # aligned_contoursの全cntに含まれる頂点数の総和を記録
             total_points = sum(len(cnt) for cnt in aligned_contours)
@@ -165,8 +167,8 @@ def main(data_folder) -> None:
     """
     results_folder = '../results/'
     os.makedirs(results_folder, exist_ok=True)
-    # data_list = [int(f.split('.')[0]) for f in os.listdir(data_folder) if f.endswith('.png')]
-    data_list = [3] #, 858, 1346]  # 処理する画像の番号リスト
+    data_list = [int(f.split('.')[0]) for f in os.listdir(data_folder) if f.endswith('.png')]
+    # data_list = [260] #, 858, 1346]  # 処理する画像の番号リスト
 
     # パラメータをdictで集約
     params = {
@@ -302,8 +304,8 @@ def main3(data_folder) -> None:
     """
     results_folder = '../results_pipeline/'
     os.makedirs(results_folder, exist_ok=True)
-    data_list = [int(f.split('.')[0]) for f in os.listdir(data_folder) if f.endswith('.png')]
-    # data_list = [3, 858, 1346]  # 処理する画像の番号リスト
+    # data_list = [int(f.split('.')[0]) for f in os.listdir(data_folder) if f.endswith('.png')]
+    data_list = [260]#, 858, 1346]  # 処理する画像の番号リスト
 
     # パラメータをdictで集約
     contour_opt_params = {
