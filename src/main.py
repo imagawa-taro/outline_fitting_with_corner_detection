@@ -95,22 +95,22 @@ def main2(data_folder) -> None:
     results_folder = '../results_pipeline/'
     os.makedirs(results_folder, exist_ok=True)
     # data_list = [int(f.split('.')[0]) for f in os.listdir(data_folder) if f.endswith('.png')]
-    data_list = [146, 260, 273]#3, 858, 1346]  # 処理する画像の番号リスト
+    data_list = [260]#3, 858, 1346]  # 処理する画像の番号リスト
 
     # パラメータをdictで集約
     contour_opt_params = {
-        'edge_blur_kernel_size': (15, 15),  # エッジの勾配生成用
+        'edge_blur_kernel_size': (3, 3),  # エッジの勾配生成用
         'erosion_kernel_size': (5, 5),  # silhouetteのシュリンク幅
         'min_area': 100.0,  # drop_small_contoursの最小面積
         'curvature_window_length_arc': 6.0,  # コーナー検出の曲率計算の平滑化窓幅（弧長単位）
-        'corner_detection_resample_points': 256,  # コーナー検出の曲率計算の再標本化点数
+        'corner_detection_resample_points': 1024,  # コーナー検出の曲率計算の再標本化点数
         'integ_window_arc': 6.0,  # コーナー検出の曲率計算の積分窓幅（弧長単位）
         'corner_angle_range_deg': (45.0, 135.0),  # コーナー検出の角度範囲（度）
         'angle_margin_deg_corner': 15.0,  # コーナー検出の角度マージン（度）
         'linearity_threshold': 0.85,  # 輪郭簡略化の直線性閾値
         'approx_epsilon_ratio': 5,  # 輪郭簡略化の近似精度（絶対値）
-        'opt_lambda_pos': 1.000,  # 輪郭最適化の位置ペナルティ
-        'opt_lambda_angle': 100,  # 輪郭最適化の角度ペナルティ
+        'opt_lambda_pos': 10,  # 輪郭最適化の位置ペナルティ
+        'opt_lambda_angle': 10000,  # 輪郭最適化の角度ペナルティ
         'min_edge_length': 3.0,  # 後処理の対象にするエッジの最小長さ
         'angle_margin_deg_post': 15.0,  # 後処理のコーナー検出の角度マージン（度）
         'edge_cumulative_window_size': 2,  # 後処理のエッジ累積の窓幅
