@@ -94,8 +94,8 @@ def main2(data_folder) -> None:
     """
     results_folder = '../results_pipeline/'
     os.makedirs(results_folder, exist_ok=True)
-    # data_list = [int(f.split('.')[0]) for f in os.listdir(data_folder) if f.endswith('.png')]
-    data_list = [260]#3, 858, 1346]  # 処理する画像の番号リスト
+    data_list = [int(f.split('.')[0]) for f in os.listdir(data_folder) if f.endswith('.png')]
+    # data_list = [260]#3, 858, 1346]  # 処理する画像の番号リスト
 
     # パラメータをdictで集約
     contour_opt_params = {
@@ -110,7 +110,7 @@ def main2(data_folder) -> None:
         'linearity_threshold': 0.85,  # 輪郭簡略化の直線性閾値
         'approx_epsilon_ratio': 5,  # 輪郭簡略化の近似精度（絶対値）
         'opt_lambda_pos': 10,  # 輪郭最適化の位置ペナルティ
-        'opt_lambda_angle': 10000,  # 輪郭最適化の角度ペナルティ
+        'opt_lambda_angle': 10,  # 輪郭最適化の角度ペナルティ
         'min_edge_length': 3.0,  # 後処理の対象にするエッジの最小長さ
         'angle_margin_deg_post': 15.0,  # 後処理のコーナー検出の角度マージン（度）
         'edge_cumulative_window_size': 2,  # 後処理のエッジ累積の窓幅
