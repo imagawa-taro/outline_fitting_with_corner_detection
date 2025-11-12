@@ -55,8 +55,10 @@ def cost_fn2(xvec: np.ndarray, N: int, image: np.ndarray, init_points: np.ndarra
     angles_mod = np.mod(angles, np.pi/2)
     angle_threshold = 10 * np.pi/180
     indices = np.where((angles_mod < angle_threshold) | (angles_mod > np.pi/2 - angle_threshold))[0]
-    angle_diffs = np.minimum(angles_mod[indices], np.pi/2 - angles_mod[indices])
-    cost3 = params.lambda_angle * np.sum(angle_diffs*angle_diffs)
+    # indicesに対応するdiffsのx,y成分の小さい方を取得する
+    angle_diffs = np.minimum(np.abs(diffs[indices, 0]), np.abs(diffs[indices, 1]))
+    # angle_diffs = np.minimum(angles_mod[indices], np.pi/2 - angles_mod[indices])
+    cost3 = params.lambda_angle * np.sum(angle_diffs)
 
     return cost1 + cost2 + cost3
 
